@@ -135,7 +135,7 @@ def build_history(scorecard: dict, policy: dict) -> dict:
         sim.rec["version"] = sim.version
         apps.append(sim.rec)
         events.extend(sim.events)
-    events.sort(key=lambda e: (e["occurred_at"], e["event_id"]))
+    events.sort(key=lambda e: e["occurred_at"])  # stable: keeps causal order of same-time events
     return {"applications": apps, "events": events}
 
 

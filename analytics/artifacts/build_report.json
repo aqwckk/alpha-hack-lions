@@ -898,8 +898,8 @@
       "SIGNING_CODE_REJECTED": 6,
       "FOUR_EYES_REJECTED": 5,
       "COMPLETENESS_FAILED": 2,
-      "PROCESSING_FAILED": 1,
       "ENRICHMENT_FAILED": 1,
+      "PROCESSING_FAILED": 1,
       "PROCESSING_RETRIED": 1
     },
     "metrics_90d": {
@@ -926,9 +926,9 @@
         "DECLINED": 0.4272
       },
       "approval_rate": 0.5728,
-      "offer_acceptance": 0.734,
-      "counter_offer_acceptance": 0.5652,
-      "credit_line_chosen": 3,
+      "offer_acceptance": 0.7459,
+      "counter_offer_acceptance": 0.6,
+      "credit_line_chosen": 12,
       "stop_factor_share": 0.13,
       "override_share": 0.0349,
       "integration_failed_attempt_share": 0.0447,
@@ -971,9 +971,9 @@
         "DECLINED": 0.4087
       },
       "approval_rate": 0.5913,
-      "offer_acceptance": 0.7647,
-      "counter_offer_acceptance": 0.7143,
-      "credit_line_chosen": 1,
+      "offer_acceptance": 0.6912,
+      "counter_offer_acceptance": 0.6,
+      "credit_line_chosen": 5,
       "stop_factor_share": 0.1391,
       "override_share": 0.069,
       "integration_failed_attempt_share": 0.0483,
