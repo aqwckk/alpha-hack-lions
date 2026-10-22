@@ -54,6 +54,7 @@ flowchart LR
 | [product-catalog.md](product-catalog.md) | 4 продукта с параметрами, цели, документы, правило подбора, калькулятор с эталонами |
 | [user-stories.md](user-stories.md) | story map и истории US-xx с критериями приемки Given/When/Then |
 | [screens.md](screens.md) | инвентарь экранов CL-xx и BK-xx, навигация, состояния, подсказки к терминам |
+| [ui-guide.md](ui-guide.md) | реализованный веб-интерфейс: маршруты экранов, покрытые истории US-xx, как UX снимает боли из исследования |
 | [demo-scenarios.md](demo-scenarios.md) | 5 сценариев демо пошагово, тестовые учетные записи, требования к синтетическим профилям |
 | [assumptions.md](assumptions.md) | допущения и упрощения A-xx и почему они сохраняют смысл процесса |
 | [ai-usage.md](ai-usage.md) | где ИИ полезен и где нет, опциональный модуль на open-weight модели |
