@@ -1,0 +1,21 @@
+# local only
+*.pdf
+.env
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# node
+node_modules/
+web/dist/
+coverage/
+
+# misc
+*.log
