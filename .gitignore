@@ -19,3 +19,7 @@ coverage/
 
 # misc
 *.log
+
+# local tooling
+.coverage
+htmlcov/

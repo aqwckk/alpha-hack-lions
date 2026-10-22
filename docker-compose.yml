@@ -1,0 +1,201 @@
+# One-command start: docker compose up --build -d   (works without .env; see .env.example)
+# Profiles: ai (local open-weight model via Ollama), test (pytest against a disposable PostgreSQL).
+name: alfa-credit
+
+x-hardening: &hardening
+  read_only: true
+  tmpfs: ["/tmp:size=64m"]
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+x-api-build: &api-build
+  context: .
+  dockerfile: services/api/Dockerfile
+  target: runtime
+
+x-api-env: &api-env
+  APP_ENV: ${APP_ENV:-demo}
+  DEMO_MODE: ${DEMO_MODE:-true}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-credit_app}:${APP_DB_PASSWORD:-credit_app_demo}@postgres:5432/${POSTGRES_DB:-credit}
+  JWT_SECRET: ${JWT_SECRET:-}
+  ACCESS_TOKEN_TTL_SECONDS: ${ACCESS_TOKEN_TTL_SECONDS:-1800}
+  REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-false}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:5173}
+  INTEGRATIONS_BASE_URL: http://integrations-mock:8090
+  INTEGRATIONS_API_KEY: ${INTEGRATIONS_API_KEY:-}
+  SCORECARD_EXPECTED_VERSION: ${SCORECARD_EXPECTED_VERSION:-scorecard-2026.10-v1}
+  SCORECARD_EXPECTED_SHA256: ${SCORECARD_EXPECTED_SHA256:-86c9d5da393b5e9b111ffad51c45b0fd10d0d282d9e631bbb46efa8f0bdc78a5}
+  POLICY_EXPECTED_VERSION: ${POLICY_EXPECTED_VERSION:-policy-2026.10-v1}
+  POLICY_EXPECTED_SHA256: ${POLICY_EXPECTED_SHA256:-e42df7693f53bebb07cd94ef366e0ae2a4db875a6e93ec8b6a9e39e10fc019a7}
+  SOURCE_TIMEOUT_SECONDS: ${SOURCE_TIMEOUT_SECONDS:-5}
+  SOURCE_FAST_RETRY_DELAYS: ${SOURCE_FAST_RETRY_DELAYS:-1,2,4}
+  ENRICHMENT_RETRY_SCHEDULE: ${ENRICHMENT_RETRY_SCHEDULE:-30,60,120,300,600}
+  OFFER_TTL_SECONDS: ${OFFER_TTL_SECONDS:-}
+  INFO_REQUEST_TTL_SECONDS: ${INFO_REQUEST_TTL_SECONDS:-}
+  DRAFT_TTL_SECONDS: ${DRAFT_TTL_SECONDS:-}
+  MANUAL_REVIEW_SLA_SECONDS: ${MANUAL_REVIEW_SLA_SECONDS:-}
+  SIGNING_CODE_TTL_SECONDS: ${SIGNING_CODE_TTL_SECONDS:-300}
+  TIMER_INTERVAL_SECONDS: ${TIMER_INTERVAL_SECONDS:-5}
+  SEED_HISTORY: ${SEED_HISTORY:-true}
+  OLLAMA_URL: ${OLLAMA_URL:-}
+  OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b-instruct}
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-credit}
+      POSTGRES_USER: ${POSTGRES_USER:-credit_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-credit_owner_demo}
+      APP_DB_USER: ${APP_DB_USER:-credit_app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-credit_app_demo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/10-app-role.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 1g }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    restart: unless-stopped
+
+  integrations-mock:
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: services/integrations-mock/Dockerfile
+    image: alfa-credit/integrations-mock:local
+    environment:
+      MOCK_DELAY_MS_MIN: ${MOCK_DELAY_MS_MIN:-200}
+      MOCK_DELAY_MS_MAX: ${MOCK_DELAY_MS_MAX:-800}
+      MOCK_TIMEOUT_SLEEP_SECONDS: ${MOCK_TIMEOUT_SLEEP_SECONDS:-6}
+      MOCK_API_KEY: ${INTEGRATIONS_API_KEY:-}
+    deploy:
+      resources:
+        limits: { memory: 256m }
+    restart: unless-stopped
+
+  migrate:
+    <<: *hardening
+    build: *api-build
+    image: alfa-credit/api:local
+    command: ["python", "-m", "app.cli", "migrate"]
+    environment:
+      <<: *api-env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-credit_owner}:${POSTGRES_PASSWORD:-credit_owner_demo}@postgres:5432/${POSTGRES_DB:-credit}
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      disable: true
+    restart: "no"
+
+  api:
+    <<: *hardening
+    build: *api-build
+    image: alfa-credit/api:local
+    command: ["python", "-m", "app.cli", "api"]
+    environment: *api-env
+    ports:
+      # for the e2e script and Postman; the web image reaches the api inside the network (api:8000)
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      integrations-mock: { condition: service_healthy }
+    deploy:
+      resources:
+        limits: { memory: 512m }
+    restart: unless-stopped
+
+  worker:
+    <<: *hardening
+    build: *api-build
+    image: alfa-credit/api:local
+    command: ["python", "-m", "app.cli", "worker"]
+    environment: *api-env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9100/metrics', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      integrations-mock: { condition: service_healthy }
+    deploy:
+      replicas: ${WORKER_REPLICAS:-1}
+      resources:
+        limits: { memory: 512m }
+    restart: unless-stopped
+
+  # web (React + nginx) is added by the frontend: build ./web, publish "8080:80",
+  # depend on api (service_healthy) and proxy /api/ to http://api:8000 (deploy/nginx/api-proxy.conf).
+  # web:
+  #   build: { context: ./web }
+  #   ports: ["${WEB_PORT:-8080}:80"]
+  #   depends_on:
+  #     api: { condition: service_healthy }
+
+  ollama:
+    profiles: ["ai"]
+    image: ollama/ollama:0.40.7
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  ollama-pull:
+    profiles: ["ai"]
+    image: ollama/ollama:0.40.7
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-qwen2.5:1.5b-instruct}"]
+    depends_on:
+      ollama: { condition: service_healthy }
+    restart: "no"
+
+  postgres-test:
+    profiles: ["test"]
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_DB: credit_test
+      POSTGRES_USER: credit_test
+      POSTGRES_PASSWORD: credit_test
+    tmpfs: ["/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U credit_test -d credit_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api-tests:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+      target: test
+    image: alfa-credit/api-tests:local
+    environment:
+      APP_ENV: test
+      DATABASE_URL: postgresql+psycopg://credit_test:credit_test@postgres-test:5432/credit_test
+    depends_on:
+      postgres-test: { condition: service_healthy }
+    read_only: true
+    tmpfs: ["/tmp:size=64m"]
+
+volumes:
+  pgdata:
+  ollama:

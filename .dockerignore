@@ -1,0 +1,16 @@
+# Build context is the repository root (configs come from analytics/artifacts).
+# Keep the context small for the classic builder; BuildKit also uses <Dockerfile>.dockerignore allowlists.
+.git
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+web/dist
+*.pdf
+docs
+analytics/uv.lock
+analytics/pyproject.toml
+analytics/README.md
+.env
