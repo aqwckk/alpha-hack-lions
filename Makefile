@@ -2,9 +2,9 @@
 COMPOSE ?= docker compose
 PYTHON ?= python3
 
-.PHONY: up down test e2e openapi logs reset ps
+.PHONY: up down test e2e openapi logs reset ps web-install web-dev web-test web-types
 
-up:            ## build and start the whole stack (api on http://localhost:8000/api, Swagger /api/docs)
+up:            ## build and start the whole stack (web on http://localhost:8080, api on http://localhost:8000/api, Swagger /api/docs)
 	$(COMPOSE) up --build -d
 	$(COMPOSE) ps
 
@@ -20,6 +20,18 @@ e2e:           ## demo scenarios S1-S5 through the API of the running stack
 
 openapi:       ## export docs/api/openapi.json from the FastAPI application
 	cd services/api && uv run --python 3.12 --frozen python -m app.cli export-openapi ../../docs/api/openapi.json
+
+web-install:   ## install frontend dependencies exactly from package-lock.json (Node 22+)
+	cd web && npm ci --ignore-scripts
+
+web-dev:       ## frontend dev server on http://localhost:5173 (proxies /api to http://localhost:8000)
+	cd web && npm run dev
+
+web-test:      ## frontend typecheck, unit/component tests and production build
+	cd web && npm run typecheck && npm test && npm run build
+
+web-types:     ## regenerate TypeScript API types from docs/api/openapi.json
+	cd web && npm run gen:api
 
 logs:          ## follow logs of all services
 	$(COMPOSE) logs -f --tail=200

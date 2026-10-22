@@ -137,13 +137,27 @@ services:
         limits: { memory: 512m }
     restart: unless-stopped
 
-  # web (React + nginx) is added by the frontend: build ./web, publish "8080:80",
-  # depend on api (service_healthy) and proxy /api/ to http://api:8000 (deploy/nginx/api-proxy.conf).
-  # web:
-  #   build: { context: ./web }
-  #   ports: ["${WEB_PORT:-8080}:80"]
-  #   depends_on:
-  #     api: { condition: service_healthy }
+  web:
+    <<: *hardening
+    build:
+      # repository root: the image also takes deploy/nginx/api-proxy.conf (single source of /api proxy settings)
+      context: .
+      dockerfile: web/Dockerfile
+    image: alfa-credit/web:local
+    ports:
+      # the only port the jury needs: SPA and /api on one origin
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      api: { condition: service_healthy }
+    deploy:
+      resources:
+        limits: { memory: 128m }
+    restart: unless-stopped
 
   ollama:
     profiles: ["ai"]
