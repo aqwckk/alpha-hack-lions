@@ -1,0 +1,565 @@
+{
+  "schema": "credit-policy",
+  "schema_version": 1,
+  "version": "policy-2026.10-v1",
+  "effective_from": "2026-10-23",
+  "author": "analytics",
+  "description": "Кредитная политика POL-01...POL-07 для синтетического каталога МСП. Денежные значения строками с двумя знаками (рубли.копейки), доли строками с двумя-четырьмя знаками, ставки строками в процентах годовых с двумя знаками.",
+  "formats": {
+    "money": "строка, рубли с копейками, 2 знака после точки, Decimal(18,2)",
+    "ratio": "строка, доля единицы (0.30 = 30%)",
+    "rate_percent": "строка, проценты годовых, 2 знака (23.50 = 23,5% годовых)",
+    "rounding": "Decimal prec=28; деньги ROUND_HALF_UP до 0.01; доли ROUND_HALF_UP до 0.0001; суммы вариантов вниз до amount_rounding"
+  },
+  "products": {
+    "EXPRESS": {
+      "name": "Экспресс-кредит",
+      "direct_application": true,
+      "applicant_types": [
+        "INDIVIDUAL_ENTREPRENEUR",
+        "LEGAL_ENTITY"
+      ],
+      "allowed_purposes": [
+        "INVENTORY",
+        "CASH_GAP",
+        "CONTRACT_EXECUTION",
+        "SEASONAL_PURCHASES",
+        "EQUIPMENT",
+        "REAL_ESTATE",
+        "BUSINESS_EXPANSION",
+        "GENERAL_NEEDS"
+      ],
+      "amount_min": "300000.00",
+      "amount_max": "5000000.00",
+      "amount_step": "10000.00",
+      "term_min_months": 6,
+      "term_max_months": 36,
+      "base_rate_percent": "22.00",
+      "review_mode": "AUTO",
+      "auto_approval_limit": "5000000.00",
+      "green_grades": [
+        "A",
+        "B",
+        "C"
+      ],
+      "gray_grades": [],
+      "decline_grades": [
+        "D",
+        "E"
+      ],
+      "min_business_age_months": 6,
+      "requires_owner_guarantee_for": [
+        "LEGAL_ENTITY"
+      ],
+      "requires_collateral": false,
+      "min_collateral_coverage": null,
+      "required_documents": [],
+      "tranche_max_term_months": null
+    },
+    "WORKING_CAPITAL": {
+      "name": "Оборотный кредит",
+      "direct_application": true,
+      "applicant_types": [
+        "INDIVIDUAL_ENTREPRENEUR",
+        "LEGAL_ENTITY"
+      ],
+      "allowed_purposes": [
+        "INVENTORY",
+        "CASH_GAP",
+        "CONTRACT_EXECUTION",
+        "SEASONAL_PURCHASES",
+        "GENERAL_NEEDS"
+      ],
+      "amount_min": "1000000.00",
+      "amount_max": "30000000.00",
+      "amount_step": "10000.00",
+      "term_min_months": 3,
+      "term_max_months": 36,
+      "base_rate_percent": "19.00",
+      "review_mode": "AUTO_WITH_MANUAL",
+      "auto_approval_limit": "15000000.00",
+      "green_grades": [
+        "A",
+        "B"
+      ],
+      "gray_grades": [
+        "C"
+      ],
+      "decline_grades": [
+        "D",
+        "E"
+      ],
+      "min_business_age_months": 12,
+      "requires_owner_guarantee_for": [
+        "LEGAL_ENTITY"
+      ],
+      "requires_collateral": false,
+      "min_collateral_coverage": null,
+      "required_documents": [],
+      "tranche_max_term_months": null
+    },
+    "CREDIT_LINE": {
+      "name": "Кредитная линия",
+      "direct_application": false,
+      "applicant_types": [
+        "INDIVIDUAL_ENTREPRENEUR",
+        "LEGAL_ENTITY"
+      ],
+      "allowed_purposes": [
+        "INVENTORY",
+        "CASH_GAP",
+        "CONTRACT_EXECUTION",
+        "SEASONAL_PURCHASES"
+      ],
+      "amount_min": "1000000.00",
+      "amount_max": "30000000.00",
+      "amount_step": "10000.00",
+      "term_min_months": 12,
+      "term_max_months": 36,
+      "base_rate_percent": "20.00",
+      "review_mode": "AUTO_WITH_MANUAL",
+      "auto_approval_limit": "15000000.00",
+      "green_grades": [
+        "A",
+        "B"
+      ],
+      "gray_grades": [
+        "C"
+      ],
+      "decline_grades": [
+        "D",
+        "E"
+      ],
+      "min_business_age_months": 12,
+      "requires_owner_guarantee_for": [
+        "LEGAL_ENTITY"
+      ],
+      "requires_collateral": false,
+      "min_collateral_coverage": null,
+      "required_documents": [],
+      "tranche_max_term_months": 12
+    },
+    "INVESTMENT": {
+      "name": "Инвестиционный кредит",
+      "direct_application": true,
+      "applicant_types": [
+        "INDIVIDUAL_ENTREPRENEUR",
+        "LEGAL_ENTITY"
+      ],
+      "allowed_purposes": [
+        "EQUIPMENT",
+        "REAL_ESTATE",
+        "BUSINESS_EXPANSION"
+      ],
+      "amount_min": "5000000.00",
+      "amount_max": "100000000.00",
+      "amount_step": "10000.00",
+      "term_min_months": 12,
+      "term_max_months": 84,
+      "base_rate_percent": "17.00",
+      "review_mode": "MANUAL",
+      "auto_approval_limit": "0.00",
+      "green_grades": [
+        "A",
+        "B",
+        "C"
+      ],
+      "gray_grades": [
+        "D"
+      ],
+      "decline_grades": [
+        "E"
+      ],
+      "min_business_age_months": 24,
+      "requires_owner_guarantee_for": [
+        "LEGAL_ENTITY"
+      ],
+      "requires_collateral": true,
+      "min_collateral_coverage": "1.00",
+      "required_documents": [
+        "COLLATERAL_DOCUMENTS",
+        "SUPPLIER_QUOTE"
+      ],
+      "tranche_max_term_months": null
+    }
+  },
+  "stop_factors": {
+    "blocked_company_statuses": [
+      "LIQUIDATING",
+      "BANKRUPTCY",
+      "REORGANIZING",
+      "CEASED"
+    ],
+    "unreliable_flags": [
+      "UNRELIABLE_ADDRESS",
+      "UNRELIABLE_DIRECTOR",
+      "MASS_ADDRESS",
+      "MASS_DIRECTOR",
+      "DISQUALIFIED_DIRECTOR"
+    ],
+    "current_delinquency_min_days": 30,
+    "tax_arrears_stop_amount": "100000.00",
+    "compliance_stop_flags": [
+      "RED"
+    ]
+  },
+  "income": {
+    "income_source_priority": [
+      "BANK_TURNOVER",
+      "FINANCIAL_STATEMENTS",
+      "BANK_STATEMENT"
+    ],
+    "min_turnover_months": 6,
+    "revenue_mismatch_threshold": "0.30"
+  },
+  "max_debt_load_by_grade": {
+    "A": "0.30",
+    "B": "0.25",
+    "C": "0.20",
+    "D": "0.15",
+    "E": "0.10"
+  },
+  "rate_premium_by_grade": {
+    "A": "0.00",
+    "B": "0.50",
+    "C": "2.00",
+    "D": "5.50",
+    "E": "13.50"
+  },
+  "counter_offer": {
+    "counter_offer_min_share": "0.30",
+    "max_counter_options": 3,
+    "amount_rounding": "10000.00",
+    "option_order": [
+      "AMOUNT_REDUCED",
+      "TERM_EXTENDED",
+      "PRODUCT_CHANGED"
+    ],
+    "recommended_priority": [
+      "TERM_EXTENDED",
+      "AMOUNT_REDUCED",
+      "PRODUCT_CHANGED"
+    ],
+    "credit_line_product": "CREDIT_LINE",
+    "credit_line_source_products": [
+      "EXPRESS",
+      "WORKING_CAPITAL"
+    ],
+    "credit_line_suggest_purposes": [
+      "SEASONAL_PURCHASES",
+      "CASH_GAP"
+    ]
+  },
+  "authority": {
+    "underwriter_authority_limit": "50000000.00",
+    "override_requires_risk_approval": true
+  },
+  "process": {
+    "max_auto_info_cycles": 3,
+    "offer_ttl_days": 7,
+    "info_response_ttl_days": 14,
+    "draft_ttl_days": 30,
+    "manual_review_sla_hours": 8,
+    "decision_sla_auto_minutes": 15,
+    "decision_sla_manual_hours": 24
+  },
+  "info_request_templates": {
+    "NI_INCOME_NOT_CONFIRMED": [
+      {
+        "reason_code": "NI_INCOME_NOT_CONFIRMED",
+        "answer_type": "DOCUMENT",
+        "document_type": "BANK_STATEMENT",
+        "field_name": null,
+        "required": true
+      },
+      {
+        "reason_code": "NI_INCOME_NOT_CONFIRMED",
+        "answer_type": "FIELD",
+        "document_type": null,
+        "field_name": "monthly_revenue_declared",
+        "required": true
+      }
+    ]
+  },
+  "rules": [
+    {
+      "id": "POL-01",
+      "name": "Стоп-факторы",
+      "terminal": true,
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "SF_COMPANY_NOT_FOUND",
+        "SF_COMPANY_STATUS",
+        "SF_BUSINESS_AGE",
+        "SF_UNRELIABLE_REGISTRY_DATA",
+        "SF_CURRENT_DELINQUENCY",
+        "SF_TAX_ARREARS",
+        "SF_COMPLIANCE"
+      ],
+      "parameters": [
+        "stop_factors.*",
+        "products.*.min_business_age_months"
+      ]
+    },
+    {
+      "id": "POL-02",
+      "name": "Подтверждение дохода",
+      "terminal": true,
+      "outcome": "NEEDS_INFO или MANUAL_REVIEW",
+      "reason_codes": [
+        "NI_INCOME_NOT_CONFIRMED",
+        "MR_INFO_CYCLES_EXCEEDED"
+      ],
+      "parameters": [
+        "income.income_source_priority",
+        "income.min_turnover_months",
+        "process.max_auto_info_cycles"
+      ]
+    },
+    {
+      "id": "POL-03",
+      "name": "Минимальный грейд",
+      "terminal": true,
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "DCL_LOW_SCORE"
+      ],
+      "parameters": [
+        "products.*.decline_grades"
+      ]
+    },
+    {
+      "id": "POL-04",
+      "name": "Расчет долговой нагрузки",
+      "terminal": false,
+      "outcome": null,
+      "reason_codes": [],
+      "parameters": [
+        "max_debt_load_by_grade",
+        "rate_premium_by_grade",
+        "products.*.base_rate_percent",
+        "counter_offer.amount_rounding"
+      ]
+    },
+    {
+      "id": "POL-05",
+      "name": "Причины ручного рассмотрения",
+      "terminal": true,
+      "outcome": "MANUAL_REVIEW",
+      "reason_codes": [
+        "MR_PRODUCT_MANUAL_ONLY",
+        "MR_AMOUNT_ABOVE_AUTO_LIMIT",
+        "MR_GRAY_ZONE",
+        "MR_DATA_MISMATCH",
+        "MR_TAX_ARREARS_MINOR",
+        "MR_INCOME_DOCUMENT_CHECK",
+        "MR_COLLATERAL_REVIEW",
+        "MR_RETURNED_AFTER_INFO"
+      ],
+      "parameters": [
+        "products.*.review_mode",
+        "products.*.auto_approval_limit",
+        "products.*.gray_grades",
+        "income.revenue_mismatch_threshold",
+        "stop_factors.tax_arrears_stop_amount",
+        "products.*.min_collateral_coverage"
+      ]
+    },
+    {
+      "id": "POL-06",
+      "name": "Одобрение",
+      "terminal": true,
+      "outcome": "APPROVED",
+      "reason_codes": [
+        "CO_PRODUCT_ALTERNATIVE"
+      ],
+      "parameters": [
+        "counter_offer.credit_line_suggest_purposes"
+      ]
+    },
+    {
+      "id": "POL-07",
+      "name": "Контрпредложение",
+      "terminal": true,
+      "outcome": "COUNTER_OFFER или DECLINED",
+      "reason_codes": [
+        "CO_DEBT_LOAD",
+        "CO_PRODUCT_ALTERNATIVE",
+        "DCL_AFFORDABILITY"
+      ],
+      "parameters": [
+        "counter_offer.*"
+      ]
+    }
+  ],
+  "reason_codes": {
+    "SF_COMPANY_NOT_FOUND": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "Мы не нашли компанию или ИП с таким ИНН в государственном реестре.",
+      "client_next_step": "Проверьте ИНН и подайте новую заявку.",
+      "employee_text": "ЕГРЮЛ/ЕГРИП: субъект с ИНН {inn} не найден."
+    },
+    "SF_COMPANY_STATUS": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "По данным госреестра компания (ИП) ликвидируется, проходит банкротство или реорганизацию, либо деятельность прекращена. В такой ситуации банк не выдает кредиты.",
+      "client_next_step": "Если сведения в реестре устарели, обновите их в налоговой и подайте заявку снова.",
+      "employee_text": "Статус субъекта {company_status} входит в blocked_company_statuses."
+    },
+    "SF_BUSINESS_AGE": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "Этот продукт доступен бизнесу, который работает не меньше {min_business_age_months} месяцев. Ваш бизнес зарегистрирован {registration_date}.",
+      "client_next_step": "Подать заявку на этот продукт можно будет с {eligible_date}.",
+      "employee_text": "Возраст бизнеса {business_age_months} мес. меньше минимума продукта {min_business_age_months} мес."
+    },
+    "SF_UNRELIABLE_REGISTRY_DATA": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "В госреестре есть отметка о недостоверности сведений о компании (например, об адресе или руководителе).",
+      "client_next_step": "Исправьте сведения в налоговой. После снятия отметки можно подать заявку снова.",
+      "employee_text": "Признаки ФНС/ЕГРЮЛ: {flags}."
+    },
+    "SF_CURRENT_DELINQUENCY": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "По данным бюро кредитных историй у вас есть просроченная задолженность по действующему кредиту или займу.",
+      "client_next_step": "Погасите просроченную задолженность и подайте заявку снова. Свою кредитную историю можно бесплатно проверить в бюро кредитных историй.",
+      "employee_text": "БКИ: текущая просрочка {delinquency_days} дн., сумма {delinquency_amount}; порог current_delinquency_min_days."
+    },
+    "SF_TAX_ARREARS": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "По данным налоговой у бизнеса есть задолженность по налогам.",
+      "client_next_step": "Погасите задолженность и подайте заявку снова после того, как сведения в налоговой обновятся.",
+      "employee_text": "ФНС: недоимка {tax_arrears_amount} не меньше tax_arrears_stop_amount."
+    },
+    "SF_COMPLIANCE": {
+      "rule": "POL-01",
+      "outcome": "DECLINED",
+      "client_visibility": "GENERIC",
+      "client_text": "Банк не может предложить финансирование по результатам обязательных проверок. Подробности таких проверок банк не раскрывает.",
+      "client_next_step": "Повторно обратиться в банк можно позже, подав новую заявку в кабинете.",
+      "employee_text": "Комплаенс-флаг мока: {compliance_flag}. Причину клиенту не раскрывать."
+    },
+    "DCL_LOW_SCORE": {
+      "rule": "POL-03",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "По совокупности данных о бизнесе и кредитной истории банк сейчас не может выдать этот кредит.",
+      "client_next_step": "Чаще всего на решение влияют стабильность выручки, текущая долговая нагрузка и история платежей. Вернитесь после нескольких месяцев стабильной работы или рассмотрите меньшую сумму.",
+      "employee_text": "Грейд {grade} входит в decline_grades продукта {product_code}."
+    },
+    "DCL_AFFORDABILITY": {
+      "rule": "POL-07",
+      "outcome": "DECLINED",
+      "client_visibility": "FULL",
+      "client_text": "Платеж по кредиту даже на самых мягких условиях продукта оказался бы слишком большим для текущей выручки и уже имеющихся платежей бизнеса.",
+      "client_next_step": "Рассмотрите меньшую сумму или вернитесь, когда выручка вырастет или текущие кредиты будут погашены.",
+      "employee_text": "Допустимый платеж {allowed_payment} не покрывает минимальные условия ни одного варианта."
+    },
+    "CO_DEBT_LOAD": {
+      "rule": "POL-07",
+      "outcome": "COUNTER_OFFER",
+      "client_visibility": "FULL",
+      "client_text": "Ежемесячный платеж на запрошенных условиях оказался бы слишком большим для текущей выручки и уже имеющихся платежей бизнеса. Поэтому банк предлагает меньшую сумму или более долгий срок: так платеж будет посильным.",
+      "client_next_step": null,
+      "employee_text": "Запрошенный платеж {requested_payment} больше допустимого {allowed_payment} (грейд {grade})."
+    },
+    "CO_PRODUCT_ALTERNATIVE": {
+      "rule": "POL-06, POL-07",
+      "outcome": "APPROVED, COUNTER_OFFER",
+      "client_visibility": "FULL",
+      "client_text": "Вам может подойти кредитная линия: деньги можно брать частями, когда они нужны, гасить и брать снова. Проценты начисляются только на ту сумму, которую вы взяли.",
+      "client_next_step": null,
+      "employee_text": "Предложена кредитная линия как альтернативный продукт."
+    },
+    "NI_INCOME_NOT_CONFIRMED": {
+      "rule": "POL-02",
+      "outcome": "NEEDS_INFO",
+      "client_visibility": "FULL",
+      "client_text": "Мы не смогли подтвердить выручку по данным банка и налоговой. Приложите выписку по расчетному счету в другом банке за последние 12 месяцев и проверьте сумму выручки в заявке.",
+      "client_next_step": null,
+      "employee_text": "Нет источника подтверждения выручки: нет оборотов в банке и отчетности ГИР БО."
+    },
+    "MR_PRODUCT_MANUAL_ONLY": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "FULL",
+      "client_text": "Инвестиционные кредиты всегда рассматривает специалист.",
+      "client_next_step": null,
+      "employee_text": "Продукт с режимом MANUAL."
+    },
+    "MR_AMOUNT_ABOVE_AUTO_LIMIT": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "FULL",
+      "client_text": "Заявки на крупные суммы рассматривает специалист.",
+      "client_next_step": null,
+      "employee_text": "Сумма {amount} больше auto_approval_limit продукта."
+    },
+    "MR_GRAY_ZONE": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Грейд {grade} в серой зоне продукта."
+    },
+    "MR_DATA_MISMATCH": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Заявленная выручка выше подтвержденной на {revenue_mismatch_pct}% (порог revenue_mismatch_threshold)."
+    },
+    "MR_TAX_ARREARS_MINOR": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Недоимка {tax_arrears_amount} меньше порога отказа."
+    },
+    "MR_INCOME_DOCUMENT_CHECK": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Доход подтвержден только выпиской клиента, нужна проверка документа."
+    },
+    "MR_COLLATERAL_REVIEW": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Покрытие залогом {collateral_coverage} ниже min_collateral_coverage."
+    },
+    "MR_RETURNED_AFTER_INFO": {
+      "rule": "POL-05",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Возврат после дозапроса андеррайтера, заявка закреплена за {assignee}."
+    },
+    "MR_INFO_CYCLES_EXCEEDED": {
+      "rule": "POL-02",
+      "outcome": "MANUAL_REVIEW",
+      "client_visibility": "NONE",
+      "client_text": null,
+      "client_next_step": null,
+      "employee_text": "Исчерпан лимит автоматических дозапросов."
+    }
+  }
+}

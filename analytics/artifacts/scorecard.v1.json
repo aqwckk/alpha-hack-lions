@@ -1,0 +1,787 @@
+{
+  "schema": "scorecard",
+  "schema_version": 1,
+  "version": "scorecard-2026.10-v1",
+  "created_at": "2026-10-23",
+  "author": "analytics",
+  "description": "Балльная карта МСП, обучена на синтетической выборке. Балл = base_points + сумма баллов бинов всех факторов. Чем выше балл, тем ниже риск.",
+  "scaling": {
+    "base_score": 600,
+    "base_odds_good_to_bad": 50,
+    "pdo": 20,
+    "factor": 28.853901,
+    "offset": 487.122876,
+    "intercept": -2.884416
+  },
+  "bin_rule": "числовой бин: lower <= x < upper, null означает отсутствие границы; категориальный бин: x входит в values; значение null или не попавшее ни в один бин категориального фактора: бин missing",
+  "feature_parameters": {
+    "min_turnover_months": 6,
+    "min_turnover_months_for_growth": 12,
+    "okved_risk_groups": {
+      "01": "HIGH",
+      "10": "LOW",
+      "25": "MEDIUM",
+      "41": "HIGH",
+      "43": "HIGH",
+      "45": "MEDIUM",
+      "46": "LOW",
+      "47": "MEDIUM",
+      "49": "MEDIUM",
+      "55": "HIGH",
+      "56": "HIGH",
+      "62": "LOW",
+      "68": "HIGH",
+      "69": "LOW",
+      "71": "LOW",
+      "74": "MEDIUM",
+      "79": "HIGH",
+      "85": "MEDIUM",
+      "86": "LOW",
+      "93": "HIGH",
+      "96": "MEDIUM"
+    },
+    "okved_default_group": "MEDIUM",
+    "mass_registration_flags": [
+      "MASS_ADDRESS",
+      "MASS_DIRECTOR"
+    ]
+  },
+  "base_points": 570,
+  "factors": [
+    {
+      "code": "bki_max_delinquency_days_12m",
+      "name": "Максимальная просрочка за 12 мес., дней",
+      "sources": [
+        "CREDIT_BUREAU"
+      ],
+      "type": "numeric",
+      "definition": "CREDIT_BUREAU.max_delinquency_days_12m; нет данных при no_record = true.",
+      "coefficient": -0.789344,
+      "iv": 0.4318,
+      "bins": [
+        {
+          "id": "BKI_MAX_DELINQUENCY_DAYS_12M_1",
+          "lower": null,
+          "upper": "1",
+          "label": "меньше 1",
+          "points": 8,
+          "woe": 0.3629,
+          "train_count": 3698,
+          "train_bad_rate": 0.0395
+        },
+        {
+          "id": "BKI_MAX_DELINQUENCY_DAYS_12M_2",
+          "lower": "1",
+          "upper": null,
+          "label": "1 и больше",
+          "points": -28,
+          "woe": -1.246,
+          "train_count": 593,
+          "train_bad_rate": 0.1703
+        }
+      ],
+      "missing": {
+        "id": "BKI_MAX_DELINQUENCY_DAYS_12M_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 7,
+        "woe": 0.2864,
+        "train_count": 480,
+        "train_bad_rate": 0.0417
+      }
+    },
+    {
+      "code": "bki_inquiries_90d",
+      "name": "Запросы в БКИ за 90 дней",
+      "sources": [
+        "CREDIT_BUREAU"
+      ],
+      "type": "numeric",
+      "definition": "CREDIT_BUREAU.inquiries_90d; нет данных при no_record = true.",
+      "coefficient": -0.764826,
+      "iv": 0.2755,
+      "bins": [
+        {
+          "id": "BKI_INQUIRIES_90D_1",
+          "lower": null,
+          "upper": "2",
+          "label": "меньше 2",
+          "points": 13,
+          "woe": 0.595,
+          "train_count": 1973,
+          "train_bad_rate": 0.0314
+        },
+        {
+          "id": "BKI_INQUIRIES_90D_2",
+          "lower": "2",
+          "upper": "3",
+          "label": "от 2 до 3",
+          "points": -1,
+          "woe": -0.0436,
+          "train_count": 1088,
+          "train_bad_rate": 0.0579
+        },
+        {
+          "id": "BKI_INQUIRIES_90D_3",
+          "lower": "3",
+          "upper": "4",
+          "label": "от 3 до 4",
+          "points": -8,
+          "woe": -0.3843,
+          "train_count": 667,
+          "train_bad_rate": 0.0795
+        },
+        {
+          "id": "BKI_INQUIRIES_90D_4",
+          "lower": "4",
+          "upper": null,
+          "label": "4 и больше",
+          "points": -19,
+          "woe": -0.8633,
+          "train_count": 563,
+          "train_bad_rate": 0.1226
+        }
+      ],
+      "missing": {
+        "id": "BKI_INQUIRIES_90D_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 6,
+        "woe": 0.2864,
+        "train_count": 480,
+        "train_bad_rate": 0.0417
+      }
+    },
+    {
+      "code": "turnover_volatility",
+      "name": "Нестабильность оборотов (коэффициент вариации)",
+      "sources": [
+        "BANK_TURNOVER"
+      ],
+      "type": "numeric",
+      "definition": "Коэффициент вариации последних months_available значений BANK_TURNOVER.inflow_by_month: стандартное отклонение (по генеральной совокупности, деление на n) / среднее; только при months_available >= min_turnover_months. Округление 4 знака.",
+      "coefficient": -0.525855,
+      "iv": 0.2545,
+      "bins": [
+        {
+          "id": "TURNOVER_VOLATILITY_1",
+          "lower": null,
+          "upper": "0.10",
+          "label": "меньше 10%",
+          "points": 13,
+          "woe": 0.87,
+          "train_count": 391,
+          "train_bad_rate": 0.023
+        },
+        {
+          "id": "TURNOVER_VOLATILITY_2",
+          "lower": "0.10",
+          "upper": "0.15",
+          "label": "от 10% до 15%",
+          "points": 7,
+          "woe": 0.4895,
+          "train_count": 983,
+          "train_bad_rate": 0.0346
+        },
+        {
+          "id": "TURNOVER_VOLATILITY_3",
+          "lower": "0.15",
+          "upper": "0.20",
+          "label": "от 15% до 20%",
+          "points": 3,
+          "woe": 0.189,
+          "train_count": 929,
+          "train_bad_rate": 0.0463
+        },
+        {
+          "id": "TURNOVER_VOLATILITY_4",
+          "lower": "0.20",
+          "upper": "0.25",
+          "label": "от 20% до 25%",
+          "points": 1,
+          "woe": 0.0522,
+          "train_count": 703,
+          "train_bad_rate": 0.0526
+        },
+        {
+          "id": "TURNOVER_VOLATILITY_5",
+          "lower": "0.25",
+          "upper": "0.30",
+          "label": "от 25% до 30%",
+          "points": -6,
+          "woe": -0.3964,
+          "train_count": 425,
+          "train_bad_rate": 0.08
+        },
+        {
+          "id": "TURNOVER_VOLATILITY_6",
+          "lower": "0.30",
+          "upper": null,
+          "label": "30% и больше",
+          "points": -14,
+          "woe": -0.9302,
+          "train_count": 531,
+          "train_bad_rate": 0.1299
+        }
+      ],
+      "missing": {
+        "id": "TURNOVER_VOLATILITY_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 1,
+        "woe": 0.0933,
+        "train_count": 809,
+        "train_bad_rate": 0.0507
+      }
+    },
+    {
+      "code": "confirmed_monthly_revenue",
+      "name": "Подтвержденная выручка в месяц, руб.",
+      "sources": [
+        "BANK_TURNOVER",
+        "FINANCIAL_STATEMENTS"
+      ],
+      "type": "numeric",
+      "definition": "BANK_TURNOVER.avg_monthly_inflow_12m, если has_account = true и months_available >= min_turnover_months; иначе FINANCIAL_STATEMENTS.revenue / 12 (до копеек), если found = true и revenue > 0; иначе нет данных. Выписка клиента (BANK_STATEMENT) в скоринге не используется.",
+      "coefficient": -0.704785,
+      "iv": 0.2317,
+      "bins": [
+        {
+          "id": "CONFIRMED_MONTHLY_REVENUE_1",
+          "lower": null,
+          "upper": "500000",
+          "label": "меньше 500 000",
+          "points": -15,
+          "woe": -0.717,
+          "train_count": 410,
+          "train_bad_rate": 0.1073
+        },
+        {
+          "id": "CONFIRMED_MONTHLY_REVENUE_2",
+          "lower": "500000",
+          "upper": "2000000",
+          "label": "от 500 000 до 2 000 000",
+          "points": -7,
+          "woe": -0.3245,
+          "train_count": 1457,
+          "train_bad_rate": 0.0755
+        },
+        {
+          "id": "CONFIRMED_MONTHLY_REVENUE_3",
+          "lower": "2000000",
+          "upper": "3000000",
+          "label": "от 2 000 000 до 3 000 000",
+          "points": 6,
+          "woe": 0.3023,
+          "train_count": 535,
+          "train_bad_rate": 0.0411
+        },
+        {
+          "id": "CONFIRMED_MONTHLY_REVENUE_4",
+          "lower": "3000000",
+          "upper": "10000000",
+          "label": "от 3 000 000 до 10 000 000",
+          "points": 7,
+          "woe": 0.3329,
+          "train_count": 1336,
+          "train_bad_rate": 0.0404
+        },
+        {
+          "id": "CONFIRMED_MONTHLY_REVENUE_5",
+          "lower": "10000000",
+          "upper": null,
+          "label": "10 000 000 и больше",
+          "points": 23,
+          "woe": 1.1081,
+          "train_count": 598,
+          "train_bad_rate": 0.0184
+        }
+      ],
+      "missing": {
+        "id": "CONFIRMED_MONTHLY_REVENUE_MISSING",
+        "label": "нет данных",
+        "points": -2,
+        "points_before_cap": -2,
+        "woe": -0.0877,
+        "train_count": 435,
+        "train_bad_rate": 0.0598
+      }
+    },
+    {
+      "code": "net_margin",
+      "name": "Рентабельность по чистой прибыли",
+      "sources": [
+        "FINANCIAL_STATEMENTS"
+      ],
+      "type": "numeric",
+      "definition": "FINANCIAL_STATEMENTS.net_profit / revenue (только ООО). Округление 4 знака.",
+      "coefficient": -0.449271,
+      "iv": 0.2246,
+      "bins": [
+        {
+          "id": "NET_MARGIN_1",
+          "lower": null,
+          "upper": "-0.05",
+          "label": "меньше -5%",
+          "points": -10,
+          "woe": -0.7664,
+          "train_count": 136,
+          "train_bad_rate": 0.1103
+        },
+        {
+          "id": "NET_MARGIN_2",
+          "lower": "-0.05",
+          "upper": "0",
+          "label": "от -5% до 0%",
+          "points": -2,
+          "woe": -0.1461,
+          "train_count": 256,
+          "train_bad_rate": 0.0625
+        },
+        {
+          "id": "NET_MARGIN_3",
+          "lower": "0",
+          "upper": "0.03",
+          "label": "от 0% до 3%",
+          "points": 0,
+          "woe": -0.0306,
+          "train_count": 216,
+          "train_bad_rate": 0.0556
+        },
+        {
+          "id": "NET_MARGIN_4",
+          "lower": "0.03",
+          "upper": "0.06",
+          "label": "от 3% до 6%",
+          "points": 12,
+          "woe": 0.8918,
+          "train_count": 273,
+          "train_bad_rate": 0.022
+        },
+        {
+          "id": "NET_MARGIN_5",
+          "lower": "0.06",
+          "upper": "0.15",
+          "label": "от 6% до 15%",
+          "points": 13,
+          "woe": 0.9657,
+          "train_count": 656,
+          "train_bad_rate": 0.0213
+        },
+        {
+          "id": "NET_MARGIN_6",
+          "lower": "0.15",
+          "upper": null,
+          "label": "15% и больше",
+          "points": 16,
+          "woe": 1.2707,
+          "train_count": 274,
+          "train_bad_rate": 0.0146
+        }
+      ],
+      "missing": {
+        "id": "NET_MARGIN_MISSING",
+        "label": "нет данных",
+        "points": -3,
+        "points_before_cap": -3,
+        "woe": -0.2031,
+        "train_count": 2960,
+        "train_bad_rate": 0.0676
+      }
+    },
+    {
+      "code": "business_age_months",
+      "name": "Возраст бизнеса, мес.",
+      "sources": [
+        "REGISTRY"
+      ],
+      "type": "numeric",
+      "definition": "Полных календарных месяцев от REGISTRY.registration_date до as_of_date (дата скоринга). Нет данных, если субъект не найден.",
+      "coefficient": -0.472447,
+      "iv": 0.2068,
+      "bins": [
+        {
+          "id": "BUSINESS_AGE_MONTHS_1",
+          "lower": null,
+          "upper": "12",
+          "label": "меньше 12",
+          "points": -12,
+          "woe": -0.8599,
+          "train_count": 467,
+          "train_bad_rate": 0.1221
+        },
+        {
+          "id": "BUSINESS_AGE_MONTHS_2",
+          "lower": "12",
+          "upper": "24",
+          "label": "от 12 до 24",
+          "points": -4,
+          "woe": -0.2916,
+          "train_count": 1094,
+          "train_bad_rate": 0.0731
+        },
+        {
+          "id": "BUSINESS_AGE_MONTHS_3",
+          "lower": "24",
+          "upper": "36",
+          "label": "от 24 до 36",
+          "points": 2,
+          "woe": 0.1328,
+          "train_count": 840,
+          "train_bad_rate": 0.0488
+        },
+        {
+          "id": "BUSINESS_AGE_MONTHS_4",
+          "lower": "36",
+          "upper": "60",
+          "label": "от 36 до 60",
+          "points": 4,
+          "woe": 0.309,
+          "train_count": 1018,
+          "train_bad_rate": 0.0413
+        },
+        {
+          "id": "BUSINESS_AGE_MONTHS_5",
+          "lower": "60",
+          "upper": "120",
+          "label": "от 60 до 120",
+          "points": 5,
+          "woe": 0.3911,
+          "train_count": 920,
+          "train_bad_rate": 0.038
+        },
+        {
+          "id": "BUSINESS_AGE_MONTHS_6",
+          "lower": "120",
+          "upper": null,
+          "label": "120 и больше",
+          "points": 9,
+          "woe": 0.6902,
+          "train_count": 432,
+          "train_bad_rate": 0.0278
+        }
+      ],
+      "missing": {
+        "id": "BUSINESS_AGE_MONTHS_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 0,
+        "woe": 0.0,
+        "train_count": 0,
+        "train_bad_rate": null
+      }
+    },
+    {
+      "code": "revenue_growth",
+      "name": "Динамика выручки",
+      "sources": [
+        "BANK_TURNOVER",
+        "FINANCIAL_STATEMENTS"
+      ],
+      "type": "numeric",
+      "definition": "Если доступно не меньше min_turnover_months_for_growth месяцев оборотов: (сумма последних 6 мес. - сумма предыдущих 6 мес.) / сумма предыдущих 6 мес.; иначе (revenue - revenue_prev_year) / revenue_prev_year из ГИР БО; иначе нет данных. Округление 4 знака.",
+      "coefficient": -0.489145,
+      "iv": 0.1972,
+      "bins": [
+        {
+          "id": "REVENUE_GROWTH_1",
+          "lower": null,
+          "upper": "-0.15",
+          "label": "меньше -15%",
+          "points": -10,
+          "woe": -0.7142,
+          "train_count": 411,
+          "train_bad_rate": 0.1071
+        },
+        {
+          "id": "REVENUE_GROWTH_2",
+          "lower": "-0.15",
+          "upper": "-0.05",
+          "label": "от -15% до -5%",
+          "points": -2,
+          "woe": -0.1239,
+          "train_count": 659,
+          "train_bad_rate": 0.0622
+        },
+        {
+          "id": "REVENUE_GROWTH_3",
+          "lower": "-0.05",
+          "upper": "0.05",
+          "label": "от -5% до 5%",
+          "points": 5,
+          "woe": 0.3279,
+          "train_count": 1061,
+          "train_bad_rate": 0.0405
+        },
+        {
+          "id": "REVENUE_GROWTH_4",
+          "lower": "0.05",
+          "upper": null,
+          "label": "5% и больше",
+          "points": 7,
+          "woe": 0.4886,
+          "train_count": 1666,
+          "train_bad_rate": 0.0348
+        }
+      ],
+      "missing": {
+        "id": "REVENUE_GROWTH_MISSING",
+        "label": "нет данных",
+        "points": -6,
+        "points_before_cap": -6,
+        "woe": -0.4309,
+        "train_count": 974,
+        "train_bad_rate": 0.0832
+      }
+    },
+    {
+      "code": "debt_load_ratio",
+      "name": "Долговая нагрузка (платежи / выручка)",
+      "sources": [
+        "APPLICATION",
+        "CREDIT_BUREAU",
+        "BANK_TURNOVER",
+        "FINANCIAL_STATEMENTS"
+      ],
+      "type": "numeric",
+      "definition": "existing_payments / income_for_dti, где existing_payments = max(анкета.existing_monthly_payments_declared, CREDIT_BUREAU.monthly_payments_total или 0 при no_record), income_for_dti = min(анкета.monthly_revenue_declared, confirmed_monthly_revenue) или заявленная выручка, если подтвержденной нет. Округление 4 знака.",
+      "coefficient": -0.888639,
+      "iv": 0.096,
+      "bins": [
+        {
+          "id": "DEBT_LOAD_RATIO_1",
+          "lower": null,
+          "upper": "0.10",
+          "label": "меньше 10%",
+          "points": 4,
+          "woe": 0.1707,
+          "train_count": 3812,
+          "train_bad_rate": 0.0475
+        },
+        {
+          "id": "DEBT_LOAD_RATIO_2",
+          "lower": "0.10",
+          "upper": "0.15",
+          "label": "от 10% до 15%",
+          "points": -10,
+          "woe": -0.3735,
+          "train_count": 535,
+          "train_bad_rate": 0.0785
+        },
+        {
+          "id": "DEBT_LOAD_RATIO_3",
+          "lower": "0.15",
+          "upper": null,
+          "label": "15% и больше",
+          "points": -17,
+          "woe": -0.6795,
+          "train_count": 424,
+          "train_bad_rate": 0.1038
+        }
+      ],
+      "missing": {
+        "id": "DEBT_LOAD_RATIO_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 0,
+        "woe": 0.0,
+        "train_count": 0,
+        "train_bad_rate": null
+      }
+    },
+    {
+      "code": "bki_credit_history_months",
+      "name": "Длина кредитной истории, мес.",
+      "sources": [
+        "CREDIT_BUREAU"
+      ],
+      "type": "numeric",
+      "definition": "CREDIT_BUREAU.credit_history_months; нет данных при no_record = true.",
+      "coefficient": -0.396446,
+      "iv": 0.0927,
+      "bins": [
+        {
+          "id": "BKI_CREDIT_HISTORY_MONTHS_1",
+          "lower": null,
+          "upper": "12",
+          "label": "меньше 12",
+          "points": -8,
+          "woe": -0.6579,
+          "train_count": 481,
+          "train_bad_rate": 0.1019
+        },
+        {
+          "id": "BKI_CREDIT_HISTORY_MONTHS_2",
+          "lower": "12",
+          "upper": "60",
+          "label": "от 12 до 60",
+          "points": 0,
+          "woe": -0.019,
+          "train_count": 2816,
+          "train_bad_rate": 0.0568
+        },
+        {
+          "id": "BKI_CREDIT_HISTORY_MONTHS_3",
+          "lower": "60",
+          "upper": null,
+          "label": "60 и больше",
+          "points": 4,
+          "woe": 0.3872,
+          "train_count": 994,
+          "train_bad_rate": 0.0382
+        }
+      ],
+      "missing": {
+        "id": "BKI_CREDIT_HISTORY_MONTHS_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 3,
+        "woe": 0.2864,
+        "train_count": 480,
+        "train_bad_rate": 0.0417
+      }
+    },
+    {
+      "code": "tax_arrears_flag",
+      "name": "Налоговая недоимка",
+      "sources": [
+        "FNS"
+      ],
+      "type": "categorical",
+      "definition": "YES, если FNS.tax_arrears_amount > 0, иначе NO.",
+      "coefficient": -0.827703,
+      "iv": 0.0548,
+      "bins": [
+        {
+          "id": "TAX_ARREARS_FLAG_NO",
+          "values": [
+            "NO"
+          ],
+          "label": "нет",
+          "points": 1,
+          "woe": 0.0588,
+          "train_count": 4561,
+          "train_bad_rate": 0.0528
+        },
+        {
+          "id": "TAX_ARREARS_FLAG_YES",
+          "values": [
+            "YES"
+          ],
+          "label": "есть",
+          "points": -21,
+          "woe": -0.885,
+          "train_count": 210,
+          "train_bad_rate": 0.1238
+        }
+      ],
+      "missing": {
+        "id": "TAX_ARREARS_FLAG_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 0,
+        "woe": 0.0,
+        "train_count": 0,
+        "train_bad_rate": null
+      }
+    },
+    {
+      "code": "industry_risk_group",
+      "name": "Отраслевая группа риска (ОКВЭД)",
+      "sources": [
+        "REGISTRY"
+      ],
+      "type": "categorical",
+      "definition": "Группа риска по первым двум цифрам REGISTRY.okved_main_code через feature_parameters.okved_risk_groups; класс, которого нет в справочнике, получает okved_default_group.",
+      "coefficient": -1.021049,
+      "iv": 0.0378,
+      "bins": [
+        {
+          "id": "INDUSTRY_RISK_GROUP_LOW",
+          "values": [
+            "LOW"
+          ],
+          "label": "низкий риск отрасли",
+          "points": 5,
+          "woe": 0.1779,
+          "train_count": 1448,
+          "train_bad_rate": 0.047
+        },
+        {
+          "id": "INDUSTRY_RISK_GROUP_MEDIUM",
+          "values": [
+            "MEDIUM"
+          ],
+          "label": "средний риск отрасли",
+          "points": 2,
+          "woe": 0.072,
+          "train_count": 2151,
+          "train_bad_rate": 0.0521
+        },
+        {
+          "id": "INDUSTRY_RISK_GROUP_HIGH",
+          "values": [
+            "HIGH"
+          ],
+          "label": "высокий риск отрасли",
+          "points": -9,
+          "woe": -0.3073,
+          "train_count": 1172,
+          "train_bad_rate": 0.0742
+        }
+      ],
+      "missing": {
+        "id": "INDUSTRY_RISK_GROUP_MISSING",
+        "label": "нет данных",
+        "points": 0,
+        "points_before_cap": 0,
+        "woe": 0.0,
+        "train_count": 0,
+        "train_bad_rate": null
+      }
+    }
+  ],
+  "grade_bands": [
+    {
+      "grade": "A",
+      "min_score": 600
+    },
+    {
+      "grade": "B",
+      "min_score": 580
+    },
+    {
+      "grade": "C",
+      "min_score": 560
+    },
+    {
+      "grade": "D",
+      "min_score": 535
+    },
+    {
+      "grade": "E",
+      "min_score": null
+    }
+  ],
+  "pd_by_grade": {
+    "A": "0.0127",
+    "B": "0.0237",
+    "C": "0.0488",
+    "D": "0.1011",
+    "E": "0.2341"
+  },
+  "monitoring": {
+    "description": "Эталонное распределение грейдов выборки разработки (2024H2) для расчета PSI на экране метрик",
+    "grade_distribution_dev": {
+      "A": "0.2959",
+      "B": "0.2344",
+      "C": "0.2208",
+      "D": "0.1753",
+      "E": "0.0735"
+    },
+    "psi_thresholds": {
+      "stable_below": "0.10",
+      "review_above": "0.25"
+    }
+  }
+}

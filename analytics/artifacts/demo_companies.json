@@ -1,0 +1,1420 @@
+{
+  "schema": "demo-companies",
+  "schema_version": 1,
+  "version": "demo-2026.10-v1",
+  "reference_date": "2026-10-23",
+  "description": "Синтетические компании и ИП для демо и моков. Все ИНН с кодом региона 00, названия и ФИО вымышлены. registration_date в sources рассчитан на reference_date; мок пересчитывает его как текущая дата минус registration_months_ago месяцев. inflow_by_month: 12 последних полных месяцев от старого к новому, null означает месяц без данных.",
+  "not_found_rule": "ИНН с цифрами 3-4, равными 99, мок возвращает как не найденный в реестре; пример: 0099000014",
+  "scorecard_version": "scorecard-2026.10-v1",
+  "policy_version": "policy-2026.10-v1",
+  "companies": [
+    {
+      "profile_id": "S1",
+      "scenario": "S1",
+      "title": "ИП, кофейня: автоодобрение экспресс-кредита",
+      "inn": "002000010193",
+      "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+      "client_login": "client.irina",
+      "registration_months_ago": 36,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+          "inn": "002000010193",
+          "ogrn": "323002000001017",
+          "company_full_name": "Индивидуальный предприниматель Примерова Ирина Олеговна",
+          "company_short_name": "ИП Примерова И.О.",
+          "registration_date": "2023-10-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "56.10",
+          "okved_main_name": "Деятельность ресторанов и услуги по доставке продуктов питания",
+          "legal_address_region": "Синтетическая область",
+          "director_full_name": "Примерова Ирина Олеговна",
+          "founders": []
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "USN_INCOME",
+          "employees_count": 6,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "540000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": null,
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 0,
+          "total_debt": "0.00",
+          "monthly_payments_total": "0.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 0,
+          "credit_history_months": 64
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "1382000.00",
+            "1511000.00",
+            "1449000.00",
+            "1520000.00",
+            "1442000.00",
+            "1575000.00",
+            "1480000.00",
+            "1615000.00",
+            "1535000.00",
+            "1578000.00",
+            "1512000.00",
+            "1651000.00"
+          ],
+          "avg_monthly_inflow_12m": "1520833.33",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "S1",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "EQUIPMENT",
+            "amount": "1200000.00",
+            "term_months": 24,
+            "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+            "monthly_revenue_declared": "1500000.00",
+            "existing_monthly_payments_declared": "0.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 605,
+            "grade": "A",
+            "outcome": "APPROVED",
+            "reason_codes": [],
+            "options": [
+              {
+                "option_type": "REQUESTED",
+                "product_code": "EXPRESS",
+                "amount": "1200000.00",
+                "term_months": 24,
+                "rate_percent": "22.00",
+                "monthly_payment": "62253.79",
+                "recommended": true
+              }
+            ],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "S2",
+      "scenario": "S2",
+      "title": "ООО, монтаж вентиляции: контрпредложение по оборотному кредиту",
+      "inn": "0010002014",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.andrey",
+      "registration_months_ago": 72,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010002014",
+          "ogrn": "1200010002015",
+          "company_full_name": "Общество с ограниченной ответственностью \"Эскиз-Климат\"",
+          "company_short_name": "ООО \"Эскиз-Климат\"",
+          "registration_date": "2020-10-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "43.22",
+          "okved_main_name": "Производство санитарно-технических работ, монтаж отопительных систем и систем кондиционирования воздуха",
+          "legal_address_region": "Условный край",
+          "director_full_name": "Образцов Андрей Николаевич",
+          "founders": [
+            {
+              "name": "Образцов Андрей Николаевич",
+              "share_percent": "70.00"
+            },
+            {
+              "name": "Макетов Павел Сергеевич",
+              "share_percent": "30.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "OSN",
+          "employees_count": 38,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "3900000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": true,
+          "report_year": 2025,
+          "revenue": "88000000.00",
+          "revenue_prev_year": "82000000.00",
+          "net_profit": "6200000.00",
+          "total_assets": "52800000.00",
+          "equity": "22000000.00"
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 2,
+          "total_debt": "17100000.00",
+          "monthly_payments_total": "950000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 1,
+          "credit_history_months": 66
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "6832000.00",
+            "7455000.00",
+            "7139000.00",
+            "7478000.00",
+            "7084000.00",
+            "7723000.00",
+            "7250000.00",
+            "7898000.00",
+            "7495000.00",
+            "7695000.00",
+            "7361000.00",
+            "8026000.00"
+          ],
+          "avg_monthly_inflow_12m": "7453000.00",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "S2",
+          "application": {
+            "product_code": "WORKING_CAPITAL",
+            "purpose": "CASH_GAP",
+            "amount": "15000000.00",
+            "term_months": 12,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "7500000.00",
+            "existing_monthly_payments_declared": "950000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 620,
+            "grade": "A",
+            "outcome": "COUNTER_OFFER",
+            "reason_codes": [
+              "CO_DEBT_LOAD",
+              "CO_PRODUCT_ALTERNATIVE"
+            ],
+            "options": [
+              {
+                "option_type": "AMOUNT_REDUCED",
+                "product_code": "WORKING_CAPITAL",
+                "amount": "13950000.00",
+                "term_months": 12,
+                "rate_percent": "19.00",
+                "monthly_payment": "1285584.27",
+                "recommended": false
+              },
+              {
+                "option_type": "TERM_EXTENDED",
+                "product_code": "WORKING_CAPITAL",
+                "amount": "15000000.00",
+                "term_months": 13,
+                "rate_percent": "19.00",
+                "monthly_payment": "1285745.92",
+                "recommended": true
+              },
+              {
+                "option_type": "PRODUCT_CHANGED",
+                "product_code": "CREDIT_LINE",
+                "amount": "13880000.00",
+                "term_months": 12,
+                "rate_percent": "20.00",
+                "monthly_payment": "1285766.94",
+                "recommended": false
+              }
+            ],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "S3",
+      "scenario": "S3",
+      "title": "ООО, пищевое производство: инвестиционный кредит, расхождение выручки и ручное рассмотрение",
+      "inn": "0010003018",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.marina",
+      "registration_months_ago": 108,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010003018",
+          "ogrn": "1170010003019",
+          "company_full_name": "Общество с ограниченной ответственностью \"Образец-Фуд\"",
+          "company_short_name": "ООО \"Образец-Фуд\"",
+          "registration_date": "2017-10-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "10.89",
+          "okved_main_name": "Производство прочих пищевых продуктов, не включенных в другие группировки",
+          "legal_address_region": "Тестовая республика",
+          "director_full_name": "Шаблонова Марина Петровна",
+          "founders": [
+            {
+              "name": "Шаблонова Марина Петровна",
+              "share_percent": "55.00"
+            },
+            {
+              "name": "Черновиков Роман Иванович",
+              "share_percent": "45.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "OSN",
+          "employees_count": 64,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "2700000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": true,
+          "report_year": 2025,
+          "revenue": "60000000.00",
+          "revenue_prev_year": "53500000.00",
+          "net_profit": "4900000.00",
+          "total_assets": "36000000.00",
+          "equity": "15000000.00"
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 2,
+          "total_debt": "10800000.00",
+          "monthly_payments_total": "600000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 1,
+          "credit_history_months": 96
+        },
+        "BANK_TURNOVER": {
+          "has_account": false,
+          "months_available": 0,
+          "inflow_by_month": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "avg_monthly_inflow_12m": "0.00",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "S3",
+          "application": {
+            "product_code": "INVESTMENT",
+            "purpose": "EQUIPMENT",
+            "amount": "40000000.00",
+            "term_months": 60,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "6750000.00",
+            "existing_monthly_payments_declared": "600000.00",
+            "collateral_value": "48000000.00",
+            "collateral_type": "PURCHASED_ASSET"
+          },
+          "expected": {
+            "score": 623,
+            "grade": "A",
+            "outcome": "MANUAL_REVIEW",
+            "reason_codes": [
+              "MR_PRODUCT_MANUAL_ONLY",
+              "MR_DATA_MISMATCH"
+            ],
+            "options": [],
+            "recommendation_outcome": "COUNTER_OFFER"
+          }
+        },
+        {
+          "request_id": "S3-AFTER-INFO",
+          "state": {
+            "manual_review_required": true
+          },
+          "application": {
+            "product_code": "INVESTMENT",
+            "purpose": "EQUIPMENT",
+            "amount": "40000000.00",
+            "term_months": 60,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "6750000.00",
+            "existing_monthly_payments_declared": "600000.00",
+            "collateral_value": "48000000.00",
+            "collateral_type": "PURCHASED_ASSET"
+          },
+          "note": "повторный проход после ответа на дозапрос андеррайтера (шаг 9 сценария S3)",
+          "expected": {
+            "score": 623,
+            "grade": "A",
+            "outcome": "MANUAL_REVIEW",
+            "reason_codes": [
+              "MR_PRODUCT_MANUAL_ONLY",
+              "MR_DATA_MISMATCH",
+              "MR_RETURNED_AFTER_INFO"
+            ],
+            "options": [],
+            "recommendation_outcome": "COUNTER_OFFER"
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "S4",
+      "scenario": "S4",
+      "title": "Начинающий ИП, интернет-магазин: отказ по двум стоп-факторам",
+      "inn": "002000040102",
+      "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+      "client_login": "client.sergey",
+      "registration_months_ago": 4,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+          "inn": "002000040102",
+          "ogrn": "326002000004017",
+          "company_full_name": "Индивидуальный предприниматель Пробников Сергей Алексеевич",
+          "company_short_name": "ИП Пробников С.А.",
+          "registration_date": "2026-06-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "47.91",
+          "okved_main_name": "Торговля розничная по почте или по информационно-коммуникационной сети Интернет",
+          "legal_address_region": "Демонстрационная область",
+          "director_full_name": "Пробников Сергей Алексеевич",
+          "founders": []
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "USN_INCOME",
+          "employees_count": 1,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "0.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": null,
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 1,
+          "total_debt": "684000.00",
+          "monthly_payments_total": "38000.00",
+          "current_delinquency_days": 45,
+          "current_delinquency_amount": "76000.00",
+          "max_delinquency_days_12m": 45,
+          "max_delinquency_days_24m": 45,
+          "delinquencies_30plus_24m": 1,
+          "inquiries_30d": 3,
+          "inquiries_90d": 5,
+          "credit_history_months": 26
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 4,
+          "inflow_by_month": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "273000.00",
+            "588000.00",
+            "315000.00",
+            "462000.00"
+          ],
+          "avg_monthly_inflow_12m": "409500.00",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "S4",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "INVENTORY",
+            "amount": "2000000.00",
+            "term_months": 12,
+            "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+            "monthly_revenue_declared": "600000.00",
+            "existing_monthly_payments_declared": "0.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 507,
+            "grade": "E",
+            "outcome": "DECLINED",
+            "reason_codes": [
+              "SF_BUSINESS_AGE",
+              "SF_CURRENT_DELINQUENCY"
+            ],
+            "options": [],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "S5",
+      "scenario": "S5",
+      "title": "ООО, оптовая торговля: сбой БКИ с повтором, затем одобрение",
+      "inn": "0010005015",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.oleg",
+      "registration_months_ago": 50,
+      "note": "Мок БКИ отвечает таймаутом на первые 4 запроса по этому ИНН (счетчик сбрасывается через служебный endpoint мока)",
+      "mock_behavior": {
+        "CREDIT_BUREAU": {
+          "fail_first_n": 4,
+          "failure": "TIMEOUT"
+        }
+      },
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010005015",
+          "ogrn": "1220010005016",
+          "company_full_name": "Общество с ограниченной ответственностью \"Макет-Трейд\"",
+          "company_short_name": "ООО \"Макет-Трейд\"",
+          "registration_date": "2022-08-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "46.73",
+          "okved_main_name": "Торговля оптовая лесоматериалами, строительными материалами и санитарно-техническим оборудованием",
+          "legal_address_region": "Синтетическая область",
+          "director_full_name": "Набросков Олег Павлович",
+          "founders": [
+            {
+              "name": "Набросков Олег Павлович",
+              "share_percent": "100.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "USN_INCOME_EXPENSE",
+          "employees_count": 22,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "1600000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": true,
+          "report_year": 2025,
+          "revenue": "70000000.00",
+          "revenue_prev_year": "66000000.00",
+          "net_profit": "4300000.00",
+          "total_assets": "42000000.00",
+          "equity": "17500000.00"
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 1,
+          "total_debt": "5400000.00",
+          "monthly_payments_total": "300000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 1,
+          "credit_history_months": 48
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "5550000.00",
+            "6046000.00",
+            "5781000.00",
+            "6046000.00",
+            "5718000.00",
+            "6225000.00",
+            "5834000.00",
+            "6346000.00",
+            "6013000.00",
+            "6164000.00",
+            "5887000.00",
+            "6409000.00"
+          ],
+          "avg_monthly_inflow_12m": "6001583.33",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "S5",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "INVENTORY",
+            "amount": "3000000.00",
+            "term_months": 24,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "6000000.00",
+            "existing_monthly_payments_declared": "300000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 643,
+            "grade": "A",
+            "outcome": "APPROVED",
+            "reason_codes": [],
+            "options": [
+              {
+                "option_type": "REQUESTED",
+                "product_code": "EXPRESS",
+                "amount": "3000000.00",
+                "term_months": 24,
+                "rate_percent": "22.00",
+                "monthly_payment": "155634.46",
+                "recommended": true
+              }
+            ],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X1",
+      "scenario": "EXTRA",
+      "title": "ООО в стадии ликвидации: отказ SF_COMPANY_STATUS",
+      "inn": "0010006019",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.demo",
+      "registration_months_ago": 60,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010006019",
+          "ogrn": "1210010006018",
+          "company_full_name": "Общество с ограниченной ответственностью \"Набросок-Строй\"",
+          "company_short_name": "ООО \"Набросок-Строй\"",
+          "registration_date": "2021-10-23",
+          "company_status": "LIQUIDATING",
+          "okved_main_code": "41.20",
+          "okved_main_name": "Строительство жилых и нежилых зданий",
+          "legal_address_region": "Условный край",
+          "director_full_name": "Эскизов Николай Петрович",
+          "founders": [
+            {
+              "name": "Эскизов Николай Петрович",
+              "share_percent": "100.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "OSN",
+          "employees_count": 12,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "800000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": true,
+          "report_year": 2025,
+          "revenue": "30000000.00",
+          "revenue_prev_year": "34000000.00",
+          "net_profit": "-900000.00",
+          "total_assets": "18000000.00",
+          "equity": "7500000.00"
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 1,
+          "total_debt": "2160000.00",
+          "monthly_payments_total": "120000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 2,
+          "credit_history_months": 40
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "2124000.00",
+            "2632000.00",
+            "2253000.00",
+            "2539000.00",
+            "2097000.00",
+            "2587000.00",
+            "2130000.00",
+            "2429000.00",
+            "2183000.00",
+            "2342000.00",
+            "1968000.00",
+            "2323000.00"
+          ],
+          "avg_monthly_inflow_12m": "2300583.33",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X1",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "GENERAL_NEEDS",
+            "amount": "1000000.00",
+            "term_months": 12,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "2400000.00",
+            "existing_monthly_payments_declared": "120000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 593,
+            "grade": "B",
+            "outcome": "DECLINED",
+            "reason_codes": [
+              "SF_COMPANY_STATUS"
+            ],
+            "options": [],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X2",
+      "scenario": "EXTRA",
+      "title": "ИП с налоговой недоимкой: отказ SF_TAX_ARREARS",
+      "inn": "002000070107",
+      "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+      "client_login": "client.demo",
+      "registration_months_ago": 40,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+          "inn": "002000070107",
+          "ogrn": "323002000007019",
+          "company_full_name": "Индивидуальный предприниматель Шаблонова Татьяна Ивановна",
+          "company_short_name": "ИП Шаблонова Т.И.",
+          "registration_date": "2023-06-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "96.02",
+          "okved_main_name": "Предоставление услуг парикмахерскими и салонами красоты",
+          "legal_address_region": "Тестовая республика",
+          "director_full_name": "Шаблонова Татьяна Ивановна",
+          "founders": []
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "PATENT",
+          "employees_count": 4,
+          "tax_arrears_amount": "350000.00",
+          "taxes_paid_last_year": "120000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": null,
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 1,
+          "total_debt": "450000.00",
+          "monthly_payments_total": "25000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 1,
+          "credit_history_months": 30
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "610000.00",
+            "764000.00",
+            "661000.00",
+            "753000.00",
+            "628000.00",
+            "783000.00",
+            "652000.00",
+            "751000.00",
+            "682000.00",
+            "739000.00",
+            "628000.00",
+            "749000.00"
+          ],
+          "avg_monthly_inflow_12m": "700000.00",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X2",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "INVENTORY",
+            "amount": "800000.00",
+            "term_months": 12,
+            "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+            "monthly_revenue_declared": "700000.00",
+            "existing_monthly_payments_declared": "25000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 588,
+            "grade": "B",
+            "outcome": "DECLINED",
+            "reason_codes": [
+              "SF_TAX_ARREARS"
+            ],
+            "options": [],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X3",
+      "scenario": "EXTRA",
+      "title": "Крупная чистая ООО: одобрение с альтернативой кредитной линии и ручное рассмотрение крупной суммы",
+      "inn": "0010008016",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.demo",
+      "registration_months_ago": 150,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010008016",
+          "ogrn": "1140010008016",
+          "company_full_name": "Общество с ограниченной ответственностью \"Прототип-Софт\"",
+          "company_short_name": "ООО \"Прототип-Софт\"",
+          "registration_date": "2014-04-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "62.01",
+          "okved_main_name": "Разработка компьютерного программного обеспечения",
+          "legal_address_region": "Синтетическая область",
+          "director_full_name": "Черновиков Степан Алексеевич",
+          "founders": [
+            {
+              "name": "Черновиков Степан Алексеевич",
+              "share_percent": "100.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "SMALL",
+          "tax_regime": "OSN",
+          "employees_count": 140,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "21000000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": true,
+          "report_year": 2025,
+          "revenue": "400000000.00",
+          "revenue_prev_year": "352000000.00",
+          "net_profit": "46000000.00",
+          "total_assets": "240000000.00",
+          "equity": "100000000.00"
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 1,
+          "total_debt": "27000000.00",
+          "monthly_payments_total": "1500000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 0,
+          "credit_history_months": 120
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "30665000.00",
+            "33563000.00",
+            "32237000.00",
+            "33871000.00",
+            "32181000.00",
+            "35193000.00",
+            "33136000.00",
+            "36209000.00",
+            "34464000.00",
+            "35494000.00",
+            "34057000.00",
+            "37245000.00"
+          ],
+          "avg_monthly_inflow_12m": "34026250.00",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X3-WC-12M",
+          "application": {
+            "product_code": "WORKING_CAPITAL",
+            "purpose": "CASH_GAP",
+            "amount": "12000000.00",
+            "term_months": 24,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "34000000.00",
+            "existing_monthly_payments_declared": "1500000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 670,
+            "grade": "A",
+            "outcome": "APPROVED",
+            "reason_codes": [
+              "CO_PRODUCT_ALTERNATIVE"
+            ],
+            "options": [
+              {
+                "option_type": "REQUESTED",
+                "product_code": "WORKING_CAPITAL",
+                "amount": "12000000.00",
+                "term_months": 24,
+                "rate_percent": "19.00",
+                "monthly_payment": "604903.41",
+                "recommended": true
+              },
+              {
+                "option_type": "PRODUCT_CHANGED",
+                "product_code": "CREDIT_LINE",
+                "amount": "12000000.00",
+                "term_months": 24,
+                "rate_percent": "20.00",
+                "monthly_payment": "1111614.07",
+                "recommended": false
+              }
+            ],
+            "recommendation_outcome": null
+          }
+        },
+        {
+          "request_id": "X3-WC-25M",
+          "application": {
+            "product_code": "WORKING_CAPITAL",
+            "purpose": "CONTRACT_EXECUTION",
+            "amount": "25000000.00",
+            "term_months": 24,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "34000000.00",
+            "existing_monthly_payments_declared": "1500000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 670,
+            "grade": "A",
+            "outcome": "MANUAL_REVIEW",
+            "reason_codes": [
+              "MR_AMOUNT_ABOVE_AUTO_LIMIT"
+            ],
+            "options": [],
+            "recommendation_outcome": "APPROVED"
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X4",
+      "scenario": "EXTRA",
+      "title": "ИП без кредитной истории: одобрение экспресс-кредита",
+      "inn": "002000090181",
+      "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+      "client_login": "client.demo",
+      "registration_months_ago": 30,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+          "inn": "002000090181",
+          "ogrn": "324002000009015",
+          "company_full_name": "Индивидуальный предприниматель Макетов Петр Николаевич",
+          "company_short_name": "ИП Макетов П.Н.",
+          "registration_date": "2024-04-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "45.20",
+          "okved_main_name": "Техническое обслуживание и ремонт автотранспортных средств",
+          "legal_address_region": "Демонстрационная область",
+          "director_full_name": "Макетов Петр Николаевич",
+          "founders": []
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "USN_INCOME",
+          "employees_count": 3,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "210000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": null,
+        "CREDIT_BUREAU": {
+          "no_record": true
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "825000.00",
+            "901000.00",
+            "862000.00",
+            "903000.00",
+            "856000.00",
+            "933000.00",
+            "876000.00",
+            "954000.00",
+            "905000.00",
+            "930000.00",
+            "889000.00",
+            "970000.00"
+          ],
+          "avg_monthly_inflow_12m": "900333.33",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X4",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "EQUIPMENT",
+            "amount": "500000.00",
+            "term_months": 12,
+            "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+            "monthly_revenue_declared": "900000.00",
+            "existing_monthly_payments_declared": "0.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 587,
+            "grade": "B",
+            "outcome": "APPROVED",
+            "reason_codes": [],
+            "options": [
+              {
+                "option_type": "REQUESTED",
+                "product_code": "EXPRESS",
+                "amount": "500000.00",
+                "term_months": 12,
+                "rate_percent": "22.50",
+                "monthly_payment": "46917.59",
+                "recommended": true
+              }
+            ],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X5",
+      "scenario": "EXTRA",
+      "title": "ИП без счета в банке: дозапрос выписки, затем ручная проверка документа",
+      "inn": "002000100136",
+      "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+      "client_login": "client.demo",
+      "registration_months_ago": 28,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+          "inn": "002000100136",
+          "ogrn": "324002000010011",
+          "company_full_name": "Индивидуальный предприниматель Образцова Юлия Сергеевна",
+          "company_short_name": "ИП Образцова Ю.С.",
+          "registration_date": "2024-06-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "85.41",
+          "okved_main_name": "Образование дополнительное детей и взрослых",
+          "legal_address_region": "Условный край",
+          "director_full_name": "Образцова Юлия Сергеевна",
+          "founders": []
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "USN_INCOME",
+          "employees_count": 5,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "150000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": null,
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 0,
+          "total_debt": "0.00",
+          "monthly_payments_total": "0.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 1,
+          "credit_history_months": 50
+        },
+        "BANK_TURNOVER": {
+          "has_account": false,
+          "months_available": 0,
+          "inflow_by_month": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "avg_monthly_inflow_12m": "0.00",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X5",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "GENERAL_NEEDS",
+            "amount": "700000.00",
+            "term_months": 12,
+            "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+            "monthly_revenue_declared": "650000.00",
+            "existing_monthly_payments_declared": "0.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 589,
+            "grade": "B",
+            "outcome": "NEEDS_INFO",
+            "reason_codes": [
+              "NI_INCOME_NOT_CONFIRMED"
+            ],
+            "options": [],
+            "recommendation_outcome": null
+          }
+        },
+        {
+          "request_id": "X5-WITH-STATEMENT",
+          "state": {
+            "auto_info_request_count": 1,
+            "bank_statement_attached": true
+          },
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "GENERAL_NEEDS",
+            "amount": "700000.00",
+            "term_months": 12,
+            "applicant_type": "INDIVIDUAL_ENTREPRENEUR",
+            "monthly_revenue_declared": "650000.00",
+            "existing_monthly_payments_declared": "0.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "note": "после ответа на дозапрос: приложена выписка BANK_STATEMENT",
+          "expected": {
+            "score": 589,
+            "grade": "B",
+            "outcome": "MANUAL_REVIEW",
+            "reason_codes": [
+              "MR_INCOME_DOCUMENT_CHECK"
+            ],
+            "options": [],
+            "recommendation_outcome": "APPROVED"
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X6",
+      "scenario": "EXTRA",
+      "title": "Слабая ООО: отказ по грейду DCL_LOW_SCORE",
+      "inn": "0010011019",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.demo",
+      "registration_months_ago": 14,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010011019",
+          "ogrn": "1250010011019",
+          "company_full_name": "Общество с ограниченной ответственностью \"Пробник-Тур\"",
+          "company_short_name": "ООО \"Пробник-Тур\"",
+          "registration_date": "2025-08-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "79.11",
+          "okved_main_name": "Деятельность туристических агентств",
+          "legal_address_region": "Тестовая республика",
+          "director_full_name": "Пробников Иван Иванович",
+          "founders": [
+            {
+              "name": "Пробников Иван Иванович",
+              "share_percent": "100.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "USN_INCOME",
+          "employees_count": 3,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "40000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": false
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 3,
+          "total_debt": "1710000.00",
+          "monthly_payments_total": "95000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 20,
+          "max_delinquency_days_24m": 20,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 3,
+          "inquiries_90d": 6,
+          "credit_history_months": 10
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "282000.00",
+            "727000.00",
+            "343000.00",
+            "621000.00",
+            "280000.00",
+            "683000.00",
+            "356000.00",
+            "521000.00",
+            "275000.00",
+            "579000.00",
+            "303000.00",
+            "434000.00"
+          ],
+          "avg_monthly_inflow_12m": "450333.33",
+          "compliance_flag": "NONE"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X6",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "CASH_GAP",
+            "amount": "1000000.00",
+            "term_months": 12,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "480000.00",
+            "existing_monthly_payments_declared": "95000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 444,
+            "grade": "E",
+            "outcome": "DECLINED",
+            "reason_codes": [
+              "DCL_LOW_SCORE"
+            ],
+            "options": [],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    },
+    {
+      "profile_id": "X7",
+      "scenario": "EXTRA",
+      "title": "ООО с комплаенс-флагом: отказ без раскрытия причины (SF_COMPLIANCE)",
+      "inn": "0010012012",
+      "applicant_type": "LEGAL_ENTITY",
+      "client_login": "client.demo",
+      "registration_months_ago": 44,
+      "note": "",
+      "mock_behavior": {},
+      "sources": {
+        "REGISTRY": {
+          "found": true,
+          "applicant_type": "LEGAL_ENTITY",
+          "inn": "0010012012",
+          "ogrn": "1230010012011",
+          "company_full_name": "Общество с ограниченной ответственностью \"Модель-Сервис\"",
+          "company_short_name": "ООО \"Модель-Сервис\"",
+          "registration_date": "2023-02-23",
+          "company_status": "ACTIVE",
+          "okved_main_code": "49.41",
+          "okved_main_name": "Деятельность автомобильного грузового транспорта",
+          "legal_address_region": "Синтетическая область",
+          "director_full_name": "Набросков Алексей Петрович",
+          "founders": [
+            {
+              "name": "Набросков Алексей Петрович",
+              "share_percent": "100.00"
+            }
+          ]
+        },
+        "FNS": {
+          "sme_category": "MICRO",
+          "tax_regime": "OSN",
+          "employees_count": 18,
+          "tax_arrears_amount": "0.00",
+          "taxes_paid_last_year": "900000.00",
+          "unreliable_flags": []
+        },
+        "FINANCIAL_STATEMENTS": {
+          "found": true,
+          "report_year": 2025,
+          "revenue": "36000000.00",
+          "revenue_prev_year": "33000000.00",
+          "net_profit": "2100000.00",
+          "total_assets": "21600000.00",
+          "equity": "9000000.00"
+        },
+        "CREDIT_BUREAU": {
+          "no_record": false,
+          "active_loans_count": 1,
+          "total_debt": "2700000.00",
+          "monthly_payments_total": "150000.00",
+          "current_delinquency_days": 0,
+          "current_delinquency_amount": "0.00",
+          "max_delinquency_days_12m": 0,
+          "max_delinquency_days_24m": 0,
+          "delinquencies_30plus_24m": 0,
+          "inquiries_30d": 0,
+          "inquiries_90d": 1,
+          "credit_history_months": 44
+        },
+        "BANK_TURNOVER": {
+          "has_account": true,
+          "months_available": 12,
+          "inflow_by_month": [
+            "2787000.00",
+            "3034000.00",
+            "2898000.00",
+            "3029000.00",
+            "2862000.00",
+            "3114000.00",
+            "2916000.00",
+            "3169000.00",
+            "3000000.00",
+            "3073000.00",
+            "2933000.00",
+            "3191000.00"
+          ],
+          "avg_monthly_inflow_12m": "3000500.00",
+          "compliance_flag": "RED"
+        }
+      },
+      "demo_requests": [
+        {
+          "request_id": "X7",
+          "application": {
+            "product_code": "EXPRESS",
+            "purpose": "INVENTORY",
+            "amount": "1500000.00",
+            "term_months": 18,
+            "applicant_type": "LEGAL_ENTITY",
+            "monthly_revenue_declared": "3000000.00",
+            "existing_monthly_payments_declared": "150000.00",
+            "collateral_value": null,
+            "collateral_type": null
+          },
+          "expected": {
+            "score": 639,
+            "grade": "A",
+            "outcome": "DECLINED",
+            "reason_codes": [
+              "SF_COMPLIANCE"
+            ],
+            "options": [],
+            "recommendation_outcome": null
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1392 @@
+{
+  "model": {
+    "samples": {
+      "population": 12000,
+      "stop_factor_excluded": 1826,
+      "train": 4771,
+      "test": 2045,
+      "oot": 3358
+    },
+    "selection": [
+      {
+        "code": "bki_max_delinquency_days_12m",
+        "iv": 0.4318409051726952,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "bki_inquiries_90d",
+        "iv": 0.2754769488463538,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "turnover_volatility",
+        "iv": 0.25446090396357124,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "confirmed_monthly_revenue",
+        "iv": 0.2317335918193531,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "net_margin",
+        "iv": 0.22459988033170453,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "business_age_months",
+        "iv": 0.20680584589748824,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "revenue_growth",
+        "iv": 0.19721358865421998,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "employees_count",
+        "iv": 0.1905527177361347,
+        "selected": false,
+        "reason": "корреляция WoE с confirmed_monthly_revenue 0.76 больше 0.6"
+      },
+      {
+        "code": "requested_amount_to_revenue",
+        "iv": 0.14444765923502292,
+        "selected": false,
+        "reason": "параметр заявки: по decision-model.md (раздел 7) сумма и срок учитываются политикой, а не скорингом"
+      },
+      {
+        "code": "debt_load_ratio",
+        "iv": 0.09596083447994229,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "bki_credit_history_months",
+        "iv": 0.09269247834644022,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "bki_inquiries_30d",
+        "iv": 0.08403512494687533,
+        "selected": false,
+        "reason": "неверный знак коэффициента в многофакторной модели"
+      },
+      {
+        "code": "tax_arrears_flag",
+        "iv": 0.054801699171992437,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "applicant_type",
+        "iv": 0.04463076488931937,
+        "selected": false,
+        "reason": "корреляция WoE с confirmed_monthly_revenue 0.64 больше 0.6"
+      },
+      {
+        "code": "industry_risk_group",
+        "iv": 0.03779954431432141,
+        "selected": true,
+        "reason": null
+      },
+      {
+        "code": "bki_active_loans_count",
+        "iv": 0.012214181523356576,
+        "selected": false,
+        "reason": "IV 0.012 меньше порога 0.02"
+      },
+      {
+        "code": "fns_mass_registration",
+        "iv": 3.1003250334716053e-06,
+        "selected": false,
+        "reason": "MASS_ADDRESS и MASS_DIRECTOR входят в unreliable_flags политики (стоп-фактор POL-01), в обучающей выборке без стоп-факторов признак не варьируется"
+      }
+    ],
+    "candidates": {
+      "business_age_months": {
+        "iv": 0.20680584589748824,
+        "monotonic": true,
+        "bins": 6,
+        "missing_share": 0.0
+      },
+      "industry_risk_group": {
+        "iv": 0.03779954431432141,
+        "monotonic": true,
+        "bins": 3,
+        "missing_share": 0.0
+      },
+      "confirmed_monthly_revenue": {
+        "iv": 0.2317335918193531,
+        "monotonic": true,
+        "bins": 5,
+        "missing_share": 0.09117585411863341
+      },
+      "revenue_growth": {
+        "iv": 0.19721358865421998,
+        "monotonic": true,
+        "bins": 4,
+        "missing_share": 0.2041500733598826
+      },
+      "debt_load_ratio": {
+        "iv": 0.09596083447994229,
+        "monotonic": true,
+        "bins": 3,
+        "missing_share": 0.0
+      },
+      "bki_max_delinquency_days_12m": {
+        "iv": 0.4318409051726952,
+        "monotonic": true,
+        "bins": 2,
+        "missing_share": 0.10060783902745755
+      },
+      "bki_inquiries_30d": {
+        "iv": 0.08403512494687533,
+        "monotonic": true,
+        "bins": 3,
+        "missing_share": 0.10060783902745755
+      },
+      "bki_inquiries_90d": {
+        "iv": 0.2754769488463538,
+        "monotonic": true,
+        "bins": 4,
+        "missing_share": 0.10060783902745755
+      },
+      "bki_credit_history_months": {
+        "iv": 0.09269247834644022,
+        "monotonic": true,
+        "bins": 3,
+        "missing_share": 0.10060783902745755
+      },
+      "bki_active_loans_count": {
+        "iv": 0.012214181523356576,
+        "monotonic": false,
+        "bins": 4,
+        "missing_share": 0.10060783902745755
+      },
+      "tax_arrears_flag": {
+        "iv": 0.054801699171992437,
+        "monotonic": true,
+        "bins": 2,
+        "missing_share": 0.0
+      },
+      "fns_mass_registration": {
+        "iv": 3.1003250334716053e-06,
+        "monotonic": true,
+        "bins": 1,
+        "missing_share": 0.0
+      },
+      "turnover_volatility": {
+        "iv": 0.25446090396357124,
+        "monotonic": true,
+        "bins": 6,
+        "missing_share": 0.1695661286941941
+      },
+      "net_margin": {
+        "iv": 0.22459988033170453,
+        "monotonic": true,
+        "bins": 6,
+        "missing_share": 0.6204150073359883
+      },
+      "employees_count": {
+        "iv": 0.1905527177361347,
+        "monotonic": true,
+        "bins": 6,
+        "missing_share": 0.0
+      },
+      "applicant_type": {
+        "iv": 0.04463076488931937,
+        "monotonic": true,
+        "bins": 2,
+        "missing_share": 0.0
+      },
+      "requested_amount_to_revenue": {
+        "iv": 0.14444765923502292,
+        "monotonic": true,
+        "bins": 5,
+        "missing_share": 0.0
+      }
+    },
+    "coefficients": {
+      "bki_max_delinquency_days_12m": -0.7893438014788463,
+      "bki_inquiries_90d": -0.7648259437581612,
+      "turnover_volatility": -0.525855235361583,
+      "confirmed_monthly_revenue": -0.7047846929201091,
+      "net_margin": -0.4492706766070556,
+      "business_age_months": -0.47244688951436137,
+      "revenue_growth": -0.48914459730564375,
+      "debt_load_ratio": -0.8886389280713792,
+      "bki_credit_history_months": -0.3964455424009785,
+      "tax_arrears_flag": -0.8277030739260479,
+      "industry_risk_group": -1.0210486088106738
+    },
+    "intercept": -2.884415903218102,
+    "metrics": {
+      "train": {
+        "n": 4771,
+        "bad": 267,
+        "dr": 0.05596311045902327,
+        "auc": 0.789433528914789,
+        "gini": 0.578867057829578,
+        "ks": 0.42129260050159323,
+        "brier": 0.04709745840834112
+      },
+      "test": {
+        "n": 2045,
+        "bad": 114,
+        "dr": 0.05574572127139364,
+        "auc": 0.7706487866481326,
+        "gini": 0.5412975732962653,
+        "ks": 0.41243515313400025,
+        "brier": 0.04856235898490913
+      },
+      "oot": {
+        "n": 3358,
+        "bad": 212,
+        "dr": 0.0631328171530673,
+        "auc": 0.7758032062277346,
+        "gini": 0.5516064124554692,
+        "ks": 0.4538017728412239,
+        "brier": 0.05477289727087187
+      }
+    },
+    "psi": {
+      "score_deciles": 0.025522141609236805,
+      "grade": 0.022554512975816322,
+      "factors": {
+        "bki_max_delinquency_days_12m": 0.0005594698825284085,
+        "bki_inquiries_90d": 0.09473498593453836,
+        "turnover_volatility": 0.0024711798219165166,
+        "confirmed_monthly_revenue": 0.0013816579720674431,
+        "net_margin": 0.004022400528855252,
+        "business_age_months": 0.010945938472766538,
+        "revenue_growth": 0.008201167130936358,
+        "debt_load_ratio": 0.0016795002445400978,
+        "bki_credit_history_months": 0.005946368582536438,
+        "tax_arrears_flag": 0.00012213124106798717,
+        "industry_risk_group": 0.0016499717088231053
+      }
+    },
+    "grades": [
+      {
+        "grade": "A",
+        "train": {
+          "n": 1423,
+          "share": 0.2982603227834835,
+          "bad": 16,
+          "dr": 0.011243851018973999,
+          "pd_model_mean": 0.011315505884745532,
+          "ci95": [
+            0.00693269295096602,
+            0.018186843793687346
+          ]
+        },
+        "test": {
+          "n": 594,
+          "share": 0.2904645476772616,
+          "bad": 7,
+          "dr": 0.011784511784511785,
+          "pd_model_mean": 0.011398672629537605,
+          "ci95": [
+            0.005719822865617249,
+            0.024123533635502778
+          ]
+        },
+        "oot": {
+          "n": 828,
+          "share": 0.2465753424657534,
+          "bad": 11,
+          "dr": 0.013285024154589372,
+          "pd_model_mean": 0.011929755317337703,
+          "ci95": [
+            0.0074340001201216605,
+            0.023631529663433286
+          ]
+        },
+        "holdout": {
+          "n": 1422,
+          "bad": 18,
+          "dr": 0.012658227848101266,
+          "ci95": [
+            0.00802171912999989,
+            0.01992079566266712
+          ]
+        }
+      },
+      {
+        "grade": "B",
+        "train": {
+          "n": 1116,
+          "share": 0.23391322573883883,
+          "bad": 30,
+          "dr": 0.026881720430107527,
+          "pd_model_mean": 0.02859621292023819,
+          "ci95": [
+            0.01889367947976306,
+            0.038115811862583934
+          ]
+        },
+        "test": {
+          "n": 482,
+          "share": 0.2356968215158924,
+          "bad": 11,
+          "dr": 0.022821576763485476,
+          "pd_model_mean": 0.02851548303856818,
+          "ci95": [
+            0.012789943437121741,
+            0.04039940881266502
+          ]
+        },
+        "oot": {
+          "n": 743,
+          "share": 0.22126265634306136,
+          "bad": 18,
+          "dr": 0.024226110363391656,
+          "pd_model_mean": 0.028972094241911894,
+          "ci95": [
+            0.015378066217444999,
+            0.037968721106667644
+          ]
+        },
+        "holdout": {
+          "n": 1225,
+          "bad": 29,
+          "dr": 0.0236734693877551,
+          "ci95": [
+            0.01653276952036331,
+            0.03379234968133038
+          ]
+        }
+      },
+      {
+        "grade": "C",
+        "train": {
+          "n": 1042,
+          "share": 0.21840285055543912,
+          "bad": 52,
+          "dr": 0.04990403071017274,
+          "pd_model_mean": 0.0543938916507389,
+          "ci95": [
+            0.03825718803288074,
+            0.06485747101300154
+          ]
+        },
+        "test": {
+          "n": 463,
+          "share": 0.22640586797066015,
+          "bad": 28,
+          "dr": 0.06047516198704104,
+          "pd_model_mean": 0.05505664344081203,
+          "ci95": [
+            0.042168672897583914,
+            0.08601527643340975
+          ]
+        },
+        "oot": {
+          "n": 767,
+          "share": 0.22840976771888027,
+          "bad": 32,
+          "dr": 0.041720990873533245,
+          "pd_model_mean": 0.05473805523099096,
+          "ci95": [
+            0.029705798634418433,
+            0.058303981844476334
+          ]
+        },
+        "holdout": {
+          "n": 1230,
+          "bad": 60,
+          "dr": 0.04878048780487805,
+          "ci95": [
+            0.03808395295267403,
+            0.06228679155780446
+          ]
+        }
+      },
+      {
+        "grade": "D",
+        "train": {
+          "n": 839,
+          "share": 0.1758541186334102,
+          "bad": 74,
+          "dr": 0.08820023837902265,
+          "pd_model_mean": 0.10675490446428769,
+          "ci95": [
+            0.07083985867859575,
+            0.10931451433763885
+          ]
+        },
+        "test": {
+          "n": 356,
+          "share": 0.17408312958435207,
+          "bad": 31,
+          "dr": 0.08707865168539326,
+          "pd_model_mean": 0.11020881922749626,
+          "ci95": [
+            0.06202310443211564,
+            0.12095073739162013
+          ]
+        },
+        "oot": {
+          "n": 683,
+          "share": 0.203394877903514,
+          "bad": 74,
+          "dr": 0.10834553440702782,
+          "pd_model_mean": 0.10850766837390703,
+          "ci95": [
+            0.08718801352758157,
+            0.13388421040294332
+          ]
+        },
+        "holdout": {
+          "n": 1039,
+          "bad": 105,
+          "dr": 0.10105871029836382,
+          "ci95": [
+            0.0841757761815177,
+            0.12088086904629061
+          ]
+        }
+      },
+      {
+        "grade": "E",
+        "train": {
+          "n": 351,
+          "share": 0.07356948228882834,
+          "bad": 95,
+          "dr": 0.2706552706552707,
+          "pd_model_mean": 0.2814924889897065,
+          "ci95": [
+            0.2268426894472742,
+            0.31943373361022526
+          ]
+        },
+        "test": {
+          "n": 150,
+          "share": 0.07334963325183375,
+          "bad": 37,
+          "dr": 0.24666666666666667,
+          "pd_model_mean": 0.26191144965868735,
+          "ci95": [
+            0.18458062005199127,
+            0.3214047571151728
+          ]
+        },
+        "oot": {
+          "n": 337,
+          "share": 0.10035735556879094,
+          "bad": 77,
+          "dr": 0.228486646884273,
+          "pd_model_mean": 0.27811745489908746,
+          "ci95": [
+            0.1868678976389596,
+            0.2762258092325021
+          ]
+        },
+        "holdout": {
+          "n": 487,
+          "bad": 114,
+          "dr": 0.23408624229979466,
+          "ci95": [
+            0.19865005096340013,
+            0.27368481225927704
+          ]
+        }
+      }
+    ],
+    "stop_factor_dr": {
+      "current_delinquency_0": {
+        "n": 11693,
+        "dr": 0.06704866159240572
+      },
+      "current_delinquency_1_29": {
+        "n": 146,
+        "dr": 0.136986301369863
+      },
+      "tax_arrears_0": {
+        "n": 11164,
+        "dr": 0.06682192762450735
+      },
+      "tax_arrears_lt_100k": {
+        "n": 535,
+        "dr": 0.14579439252336449
+      },
+      "tax_arrears_ge_100k": {
+        "n": 301,
+        "dr": 0.22259136212624583
+      },
+      "SF_CURRENT_DELINQUENCY": {
+        "n": 161,
+        "dr": 0.5403726708074534
+      },
+      "SF_TAX_ARREARS": {
+        "n": 301,
+        "dr": 0.22259136212624583
+      },
+      "SF_UNRELIABLE_REGISTRY_DATA": {
+        "n": 539,
+        "dr": 0.13172541743970315
+      },
+      "SF_COMPANY_STATUS": {
+        "n": 160,
+        "dr": 0.08125
+      },
+      "SF_BUSINESS_AGE": {
+        "n": 742,
+        "dr": 0.14150943396226415
+      }
+    },
+    "score_quantiles": {
+      "dev": [
+        527.0,
+        560.0,
+        582.0,
+        604.0,
+        634.0
+      ],
+      "oot": [
+        521.0,
+        554.0,
+        577.0,
+        599.0,
+        629.0
+      ]
+    }
+  },
+  "policy_calibration": {
+    "lgd_unsecured": "0.60",
+    "constraints": {
+      "max_positive_dr": 0.04,
+      "max_marginal_dr": 0.06,
+      "max_post_loan_load_p90": 0.25
+    },
+    "variants": {
+      "V1": {
+        "max_debt_load_by_grade": {
+          "A": "0.25",
+          "B": "0.20",
+          "C": "0.17",
+          "D": "0.14",
+          "E": "0.10"
+        },
+        "n": 12000,
+        "shares": {
+          "APPROVED": 0.24925,
+          "COUNTER_OFFER": 0.08566666666666667,
+          "MANUAL_REVIEW": 0.22875,
+          "NEEDS_INFO": 0.07991666666666666,
+          "DECLINED": 0.35641666666666666
+        },
+        "auto_positive_share": 0.33491666666666664,
+        "auto_final_share": 0.6913333333333334,
+        "positive_dr": 0.021149539686489176,
+        "post_loan_load_p50": 0.1353132651344923,
+        "post_loan_load_p90": 0.19992700313487416,
+        "by_product": {
+          "EXPRESS": {
+            "APPROVED": 0.3356622565779694,
+            "COUNTER_OFFER": 0.10346365393191616,
+            "MANUAL_REVIEW": 0.07224617214211387,
+            "NEEDS_INFO": 0.08934145978891037,
+            "DECLINED": 0.39928645755909026,
+            "n": 6727
+          },
+          "INVESTMENT": {
+            "APPROVED": 0.0,
+            "COUNTER_OFFER": 0.0,
+            "MANUAL_REVIEW": 0.6634615384615384,
+            "NEEDS_INFO": 0.04895104895104895,
+            "DECLINED": 0.2875874125874126,
+            "n": 1144
+          },
+          "WORKING_CAPITAL": {
+            "APPROVED": 0.1775248244126907,
+            "COUNTER_OFFER": 0.08040687817873578,
+            "MANUAL_REVIEW": 0.36328408815693874,
+            "NEEDS_INFO": 0.07314119641559699,
+            "DECLINED": 0.3056430128360378,
+            "n": 4129
+          }
+        },
+        "reason_codes": {
+          "DCL_LOW_SCORE": 2220,
+          "CO_PRODUCT_ALTERNATIVE": 1235,
+          "CO_DEBT_LOAD": 1028,
+          "NI_INCOME_NOT_CONFIRMED": 959,
+          "MR_GRAY_ZONE": 824,
+          "MR_DATA_MISMATCH": 809,
+          "MR_PRODUCT_MANUAL_ONLY": 759,
+          "SF_BUSINESS_AGE": 742,
+          "MR_AMOUNT_ABOVE_AUTO_LIMIT": 705,
+          "SF_UNRELIABLE_REGISTRY_DATA": 539,
+          "SF_TAX_ARREARS": 301,
+          "DCL_AFFORDABILITY": 231,
+          "MR_TAX_ARREARS_MINOR": 183,
+          "SF_CURRENT_DELINQUENCY": 161,
+          "SF_COMPANY_STATUS": 160,
+          "MR_COLLATERAL_REVIEW": 109,
+          "SF_COMPLIANCE": 55
+        }
+      },
+      "V2": {
+        "max_debt_load_by_grade": {
+          "A": "0.30",
+          "B": "0.25",
+          "C": "0.20",
+          "D": "0.15",
+          "E": "0.10"
+        },
+        "n": 12000,
+        "shares": {
+          "APPROVED": 0.27858333333333335,
+          "COUNTER_OFFER": 0.065,
+          "MANUAL_REVIEW": 0.22875,
+          "NEEDS_INFO": 0.07991666666666666,
+          "DECLINED": 0.34775
+        },
+        "auto_positive_share": 0.34358333333333335,
+        "auto_final_share": 0.6913333333333334,
+        "positive_dr": 0.022071307300509338,
+        "post_loan_load_p50": 0.13919833880741547,
+        "post_loan_load_p90": 0.24718496121668943,
+        "by_product": {
+          "EXPRESS": {
+            "APPROVED": 0.37297458005054257,
+            "COUNTER_OFFER": 0.07848966850007433,
+            "MANUAL_REVIEW": 0.07224617214211387,
+            "NEEDS_INFO": 0.08934145978891037,
+            "DECLINED": 0.38694811951835884,
+            "n": 6727
+          },
+          "INVESTMENT": {
+            "APPROVED": 0.0,
+            "COUNTER_OFFER": 0.0,
+            "MANUAL_REVIEW": 0.6634615384615384,
+            "NEEDS_INFO": 0.04895104895104895,
+            "DECLINED": 0.2875874125874126,
+            "n": 1144
+          },
+          "WORKING_CAPITAL": {
+            "APPROVED": 0.20198595301525793,
+            "COUNTER_OFFER": 0.061031726810365707,
+            "MANUAL_REVIEW": 0.36328408815693874,
+            "NEEDS_INFO": 0.07314119641559699,
+            "DECLINED": 0.30055703560184066,
+            "n": 4129
+          }
+        },
+        "reason_codes": {
+          "DCL_LOW_SCORE": 2220,
+          "CO_PRODUCT_ALTERNATIVE": 1183,
+          "NI_INCOME_NOT_CONFIRMED": 959,
+          "MR_GRAY_ZONE": 824,
+          "MR_DATA_MISMATCH": 809,
+          "CO_DEBT_LOAD": 780,
+          "MR_PRODUCT_MANUAL_ONLY": 759,
+          "SF_BUSINESS_AGE": 742,
+          "MR_AMOUNT_ABOVE_AUTO_LIMIT": 705,
+          "SF_UNRELIABLE_REGISTRY_DATA": 539,
+          "SF_TAX_ARREARS": 301,
+          "MR_TAX_ARREARS_MINOR": 183,
+          "SF_CURRENT_DELINQUENCY": 161,
+          "SF_COMPANY_STATUS": 160,
+          "DCL_AFFORDABILITY": 127,
+          "MR_COLLATERAL_REVIEW": 109,
+          "SF_COMPLIANCE": 55
+        },
+        "marginal_vs_previous": {
+          "n": 352,
+          "dr": 0.03409090909090909
+        }
+      },
+      "V3": {
+        "max_debt_load_by_grade": {
+          "A": "0.35",
+          "B": "0.30",
+          "C": "0.25",
+          "D": "0.18",
+          "E": "0.12"
+        },
+        "n": 12000,
+        "shares": {
+          "APPROVED": 0.30191666666666667,
+          "COUNTER_OFFER": 0.04733333333333333,
+          "MANUAL_REVIEW": 0.22875,
+          "NEEDS_INFO": 0.07991666666666666,
+          "DECLINED": 0.34208333333333335
+        },
+        "auto_positive_share": 0.34925,
+        "auto_final_share": 0.6913333333333334,
+        "positive_dr": 0.022429014554998808,
+        "post_loan_load_p50": 0.1413024180865121,
+        "post_loan_load_p90": 0.2835813539237529,
+        "by_product": {
+          "EXPRESS": {
+            "APPROVED": 0.4028541697636391,
+            "COUNTER_OFFER": 0.057380704623160396,
+            "MANUAL_REVIEW": 0.07224617214211387,
+            "NEEDS_INFO": 0.08934145978891037,
+            "DECLINED": 0.3781774936821763,
+            "n": 6727
+          },
+          "INVESTMENT": {
+            "APPROVED": 0.0,
+            "COUNTER_OFFER": 0.0,
+            "MANUAL_REVIEW": 0.6634615384615384,
+            "NEEDS_INFO": 0.04895104895104895,
+            "DECLINED": 0.2875874125874126,
+            "n": 1144
+          },
+          "WORKING_CAPITAL": {
+            "APPROVED": 0.22111891499152336,
+            "COUNTER_OFFER": 0.0440784693630419,
+            "MANUAL_REVIEW": 0.36328408815693874,
+            "NEEDS_INFO": 0.07314119641559699,
+            "DECLINED": 0.298377331072899,
+            "n": 4129
+          }
+        },
+        "reason_codes": {
+          "DCL_LOW_SCORE": 2220,
+          "CO_PRODUCT_ALTERNATIVE": 1155,
+          "NI_INCOME_NOT_CONFIRMED": 959,
+          "MR_GRAY_ZONE": 824,
+          "MR_DATA_MISMATCH": 809,
+          "MR_PRODUCT_MANUAL_ONLY": 759,
+          "SF_BUSINESS_AGE": 742,
+          "MR_AMOUNT_ABOVE_AUTO_LIMIT": 705,
+          "CO_DEBT_LOAD": 568,
+          "SF_UNRELIABLE_REGISTRY_DATA": 539,
+          "SF_TAX_ARREARS": 301,
+          "MR_TAX_ARREARS_MINOR": 183,
+          "SF_CURRENT_DELINQUENCY": 161,
+          "SF_COMPANY_STATUS": 160,
+          "MR_COLLATERAL_REVIEW": 109,
+          "DCL_AFFORDABILITY": 59,
+          "SF_COMPLIANCE": 55
+        },
+        "marginal_vs_previous": {
+          "n": 280,
+          "dr": 0.017857142857142856
+        }
+      },
+      "V4": {
+        "max_debt_load_by_grade": {
+          "A": "0.40",
+          "B": "0.35",
+          "C": "0.30",
+          "D": "0.20",
+          "E": "0.15"
+        },
+        "n": 12000,
+        "shares": {
+          "APPROVED": 0.3185,
+          "COUNTER_OFFER": 0.03333333333333333,
+          "MANUAL_REVIEW": 0.22875,
+          "NEEDS_INFO": 0.07991666666666666,
+          "DECLINED": 0.3395
+        },
+        "auto_positive_share": 0.35183333333333333,
+        "auto_final_share": 0.6913333333333334,
+        "positive_dr": 0.02297489341544292,
+        "post_loan_load_p50": 0.1422478479839562,
+        "post_loan_load_p90": 0.2994892537552572,
+        "by_product": {
+          "EXPRESS": {
+            "APPROVED": 0.4242604429909321,
+            "COUNTER_OFFER": 0.0398394529507953,
+            "MANUAL_REVIEW": 0.07224617214211387,
+            "NEEDS_INFO": 0.08934145978891037,
+            "DECLINED": 0.3743124721272484,
+            "n": 6727
+          },
+          "INVESTMENT": {
+            "APPROVED": 0.0,
+            "COUNTER_OFFER": 0.0,
+            "MANUAL_REVIEW": 0.6634615384615384,
+            "NEEDS_INFO": 0.04895104895104895,
+            "DECLINED": 0.2875874125874126,
+            "n": 1144
+          },
+          "WORKING_CAPITAL": {
+            "APPROVED": 0.23443933155727778,
+            "COUNTER_OFFER": 0.03196899975781061,
+            "MANUAL_REVIEW": 0.36328408815693874,
+            "NEEDS_INFO": 0.07314119641559699,
+            "DECLINED": 0.2971663841123759,
+            "n": 4129
+          }
+        },
+        "reason_codes": {
+          "DCL_LOW_SCORE": 2220,
+          "CO_PRODUCT_ALTERNATIVE": 1125,
+          "NI_INCOME_NOT_CONFIRMED": 959,
+          "MR_GRAY_ZONE": 824,
+          "MR_DATA_MISMATCH": 809,
+          "MR_PRODUCT_MANUAL_ONLY": 759,
+          "SF_BUSINESS_AGE": 742,
+          "MR_AMOUNT_ABOVE_AUTO_LIMIT": 705,
+          "SF_UNRELIABLE_REGISTRY_DATA": 539,
+          "CO_DEBT_LOAD": 400,
+          "SF_TAX_ARREARS": 301,
+          "MR_TAX_ARREARS_MINOR": 183,
+          "SF_CURRENT_DELINQUENCY": 161,
+          "SF_COMPANY_STATUS": 160,
+          "MR_COLLATERAL_REVIEW": 109,
+          "SF_COMPLIANCE": 55,
+          "DCL_AFFORDABILITY": 28
+        }
+      }
+    },
+    "chosen": "V2",
+    "grade_distribution_flow": {
+      "A": 0.25466666666666665,
+      "B": 0.21416666666666667,
+      "C": 0.22291666666666668,
+      "D": 0.2055,
+      "E": 0.10275
+    }
+  },
+  "history": {
+    "applications": 420,
+    "events": 11648,
+    "event_types": {
+      "STATUS_CHANGED": 3226,
+      "SOURCE_REQUEST_SUCCEEDED": 1663,
+      "CONSENT_GIVEN": 1260,
+      "PRODUCT_WIZARD_STARTED": 590,
+      "DECISION_MADE": 476,
+      "PRODUCT_SELECTED": 420,
+      "APPLICATION_CREATED": 420,
+      "PREFILL_COMPLETED": 407,
+      "COMPLETENESS_PASSED": 375,
+      "ENRICHMENT_COMPLETED": 375,
+      "SCORING_COMPLETED": 375,
+      "APPLICATION_SUBMITTED": 337,
+      "OFFER_ISSUED": 185,
+      "OFFER_ACCEPTED": 138,
+      "DOCUMENTS_PREPARED": 138,
+      "SIGNING_CODE_ISSUED": 135,
+      "DOCUMENTS_SIGNED": 135,
+      "LOAN_ISSUED": 135,
+      "APPLICATION_VIEWED": 101,
+      "COMMENT_ADDED": 101,
+      "MANUAL_REVIEW_QUEUED": 92,
+      "REVIEW_TAKEN": 89,
+      "APPLICATION_CANCELLED": 71,
+      "SOURCE_REQUEST_FAILED": 70,
+      "EARLY_CHECK_WARNING_SHOWN": 54,
+      "INFO_REQUESTED": 51,
+      "STOP_FACTOR_TRIGGERED": 44,
+      "INFO_PROVIDED": 40,
+      "ENRICHMENT_RETRY_SCHEDULED": 29,
+      "OFFER_DECLINED": 25,
+      "OFFER_EXPIRED": 18,
+      "REVIEW_SLA_BREACHED": 13,
+      "PREFILL_FAILED": 13,
+      "REVIEW_ASSIGNED": 12,
+      "FOUR_EYES_REQUESTED": 12,
+      "FOUR_EYES_APPROVED": 7,
+      "SIGNING_CODE_REJECTED": 6,
+      "FOUR_EYES_REJECTED": 5,
+      "COMPLETENESS_FAILED": 2,
+      "PROCESSING_FAILED": 1,
+      "ENRICHMENT_FAILED": 1,
+      "PROCESSING_RETRIED": 1
+    },
+    "metrics_90d": {
+      "period": {
+        "start": "2026-07-24T21:00:00Z",
+        "end": "2026-10-22T21:00:00Z"
+      },
+      "applications_created": 419,
+      "north_star": 0.7017,
+      "time_to_decision_median_sec": 20,
+      "time_to_decision_auto_median_sec": 17,
+      "wizard_conversion": 0.7114,
+      "fill_conversion": 0.8043,
+      "fill_duration_median_sec": 401,
+      "prefill_share": 0.9131,
+      "completeness_first_time": 0.9941,
+      "info_request_share": 0.1454,
+      "info_request_cycles_avg": 1.041,
+      "auto_decision_share": 0.7337,
+      "manual_review_sla_share": 0.8605,
+      "outcomes": {
+        "APPROVED": 0.4334,
+        "COUNTER_OFFER": 0.1393,
+        "DECLINED": 0.4272
+      },
+      "approval_rate": 0.5728,
+      "offer_acceptance": 0.734,
+      "counter_offer_acceptance": 0.5652,
+      "credit_line_chosen": 3,
+      "stop_factor_share": 0.13,
+      "override_share": 0.0349,
+      "integration_failed_attempt_share": 0.0447,
+      "enrichment_retries": 29,
+      "processing_error_applications": 1,
+      "end_to_end_conversion": 0.3222,
+      "status_now": {
+        "CANCELLED": 70,
+        "DECLINED": 138,
+        "DRAFT": 21,
+        "INFO_REQUESTED": 5,
+        "ISSUED": 135,
+        "OFFER_DECLINED": 25,
+        "OFFER_EXPIRED": 18,
+        "OFFER_PENDING": 6,
+        "SIGNING": 1
+      }
+    },
+    "metrics_30d": {
+      "period": {
+        "start": "2026-09-22T21:00:00Z",
+        "end": "2026-10-22T21:00:00Z"
+      },
+      "applications_created": 150,
+      "north_star": 0.6933,
+      "time_to_decision_median_sec": 20,
+      "time_to_decision_auto_median_sec": 18.0,
+      "wizard_conversion": 0.7576,
+      "fill_conversion": 0.8,
+      "fill_duration_median_sec": 409.0,
+      "prefill_share": 0.9134,
+      "completeness_first_time": 0.9917,
+      "info_request_share": 0.1417,
+      "info_request_cycles_avg": 1.059,
+      "auto_decision_share": 0.7478,
+      "manual_review_sla_share": 0.8966,
+      "outcomes": {
+        "APPROVED": 0.4609,
+        "COUNTER_OFFER": 0.1304,
+        "DECLINED": 0.4087
+      },
+      "approval_rate": 0.5913,
+      "offer_acceptance": 0.7647,
+      "counter_offer_acceptance": 0.7143,
+      "credit_line_chosen": 1,
+      "stop_factor_share": 0.1391,
+      "override_share": 0.069,
+      "integration_failed_attempt_share": 0.0483,
+      "enrichment_retries": 11,
+      "processing_error_applications": 0,
+      "end_to_end_conversion": 0.3,
+      "status_now": {
+        "CANCELLED": 9,
+        "DECLINED": 47,
+        "DRAFT": 21,
+        "INFO_REQUESTED": 5,
+        "ISSUED": 45,
+        "OFFER_DECLINED": 11,
+        "OFFER_EXPIRED": 5,
+        "OFFER_PENDING": 6,
+        "SIGNING": 1
+      }
+    },
+    "psi_grade_dev_vs_history": 0.019553834579821818
+  },
+  "demo": [
+    {
+      "case_id": "DEMO-S1",
+      "score": 605,
+      "grade": "A",
+      "outcome": "APPROVED",
+      "reason_codes": [],
+      "values": {
+        "income_confirmed": "1520833.33",
+        "income_source": "BANK_TURNOVER",
+        "revenue_mismatch": "-0.0137",
+        "income_for_dti": "1500000.00",
+        "existing_payments": "0.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "450000.00",
+        "rate_percent": "22.00",
+        "requested_payment": "62253.79",
+        "max_amount_requested_term": "5000000.00"
+      },
+      "options": [
+        [
+          "REQUESTED",
+          "1200000.00",
+          24,
+          "22.00",
+          "62253.79",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-S2",
+      "score": 620,
+      "grade": "A",
+      "outcome": "COUNTER_OFFER",
+      "reason_codes": [
+        "CO_DEBT_LOAD",
+        "CO_PRODUCT_ALTERNATIVE"
+      ],
+      "values": {
+        "income_confirmed": "7453000.00",
+        "income_source": "BANK_TURNOVER",
+        "revenue_mismatch": "0.0063",
+        "income_for_dti": "7453000.00",
+        "existing_payments": "950000.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "1285900.00",
+        "rate_percent": "19.00",
+        "requested_payment": "1382348.67",
+        "max_amount_requested_term": "13950000.00"
+      },
+      "options": [
+        [
+          "AMOUNT_REDUCED",
+          "13950000.00",
+          12,
+          "19.00",
+          "1285584.27",
+          false
+        ],
+        [
+          "TERM_EXTENDED",
+          "15000000.00",
+          13,
+          "19.00",
+          "1285745.92",
+          true
+        ],
+        [
+          "PRODUCT_CHANGED",
+          "13880000.00",
+          12,
+          "20.00",
+          "1285766.94",
+          false
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-S3",
+      "score": 623,
+      "grade": "A",
+      "outcome": "MANUAL_REVIEW",
+      "reason_codes": [
+        "MR_PRODUCT_MANUAL_ONLY",
+        "MR_DATA_MISMATCH"
+      ],
+      "values": {
+        "income_confirmed": "5000000.00",
+        "income_source": "FINANCIAL_STATEMENTS",
+        "revenue_mismatch": "0.3500",
+        "income_for_dti": "5000000.00",
+        "existing_payments": "600000.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "900000.00",
+        "rate_percent": "17.00",
+        "requested_payment": "994103.03",
+        "max_amount_requested_term": "36210000.00"
+      },
+      "options": [
+        [
+          "AMOUNT_REDUCED",
+          "36210000.00",
+          60,
+          "17.00",
+          "899911.77",
+          false
+        ],
+        [
+          "TERM_EXTENDED",
+          "40000000.00",
+          71,
+          "17.00",
+          "897093.28",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-S3-AFTER-INFO",
+      "score": 623,
+      "grade": "A",
+      "outcome": "MANUAL_REVIEW",
+      "reason_codes": [
+        "MR_PRODUCT_MANUAL_ONLY",
+        "MR_DATA_MISMATCH",
+        "MR_RETURNED_AFTER_INFO"
+      ],
+      "values": {
+        "income_confirmed": "5000000.00",
+        "income_source": "FINANCIAL_STATEMENTS",
+        "revenue_mismatch": "0.3500",
+        "income_for_dti": "5000000.00",
+        "existing_payments": "600000.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "900000.00",
+        "rate_percent": "17.00",
+        "requested_payment": "994103.03",
+        "max_amount_requested_term": "36210000.00"
+      },
+      "options": [
+        [
+          "AMOUNT_REDUCED",
+          "36210000.00",
+          60,
+          "17.00",
+          "899911.77",
+          false
+        ],
+        [
+          "TERM_EXTENDED",
+          "40000000.00",
+          71,
+          "17.00",
+          "897093.28",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-S4",
+      "score": 507,
+      "grade": "E",
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "SF_BUSINESS_AGE",
+        "SF_CURRENT_DELINQUENCY"
+      ],
+      "values": null,
+      "options": []
+    },
+    {
+      "case_id": "DEMO-S5",
+      "score": 643,
+      "grade": "A",
+      "outcome": "APPROVED",
+      "reason_codes": [],
+      "values": {
+        "income_confirmed": "6001583.33",
+        "income_source": "BANK_TURNOVER",
+        "revenue_mismatch": "-0.0003",
+        "income_for_dti": "6000000.00",
+        "existing_payments": "300000.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "1500000.00",
+        "rate_percent": "22.00",
+        "requested_payment": "155634.46",
+        "max_amount_requested_term": "5000000.00"
+      },
+      "options": [
+        [
+          "REQUESTED",
+          "3000000.00",
+          24,
+          "22.00",
+          "155634.46",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-X1",
+      "score": 593,
+      "grade": "B",
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "SF_COMPANY_STATUS"
+      ],
+      "values": null,
+      "options": []
+    },
+    {
+      "case_id": "DEMO-X2",
+      "score": 588,
+      "grade": "B",
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "SF_TAX_ARREARS"
+      ],
+      "values": null,
+      "options": []
+    },
+    {
+      "case_id": "DEMO-X3-WC-12M",
+      "score": 670,
+      "grade": "A",
+      "outcome": "APPROVED",
+      "reason_codes": [
+        "CO_PRODUCT_ALTERNATIVE"
+      ],
+      "values": {
+        "income_confirmed": "34026250.00",
+        "income_source": "BANK_TURNOVER",
+        "revenue_mismatch": "-0.0008",
+        "income_for_dti": "34000000.00",
+        "existing_payments": "1500000.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "8700000.00",
+        "rate_percent": "19.00",
+        "requested_payment": "604903.41",
+        "max_amount_requested_term": "30000000.00"
+      },
+      "options": [
+        [
+          "REQUESTED",
+          "12000000.00",
+          24,
+          "19.00",
+          "604903.41",
+          true
+        ],
+        [
+          "PRODUCT_CHANGED",
+          "12000000.00",
+          24,
+          "20.00",
+          "1111614.07",
+          false
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-X3-WC-25M",
+      "score": 670,
+      "grade": "A",
+      "outcome": "MANUAL_REVIEW",
+      "reason_codes": [
+        "MR_AMOUNT_ABOVE_AUTO_LIMIT"
+      ],
+      "values": {
+        "income_confirmed": "34026250.00",
+        "income_source": "BANK_TURNOVER",
+        "revenue_mismatch": "-0.0008",
+        "income_for_dti": "34000000.00",
+        "existing_payments": "1500000.00",
+        "max_debt_load": "0.30",
+        "allowed_payment": "8700000.00",
+        "rate_percent": "19.00",
+        "requested_payment": "1260215.43",
+        "max_amount_requested_term": "30000000.00"
+      },
+      "options": [
+        [
+          "REQUESTED",
+          "25000000.00",
+          24,
+          "19.00",
+          "1260215.43",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-X4",
+      "score": 587,
+      "grade": "B",
+      "outcome": "APPROVED",
+      "reason_codes": [],
+      "values": {
+        "income_confirmed": "900333.33",
+        "income_source": "BANK_TURNOVER",
+        "revenue_mismatch": "-0.0004",
+        "income_for_dti": "900000.00",
+        "existing_payments": "0.00",
+        "max_debt_load": "0.25",
+        "allowed_payment": "225000.00",
+        "rate_percent": "22.50",
+        "requested_payment": "46917.59",
+        "max_amount_requested_term": "2390000.00"
+      },
+      "options": [
+        [
+          "REQUESTED",
+          "500000.00",
+          12,
+          "22.50",
+          "46917.59",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-X5",
+      "score": 589,
+      "grade": "B",
+      "outcome": "NEEDS_INFO",
+      "reason_codes": [
+        "NI_INCOME_NOT_CONFIRMED"
+      ],
+      "values": null,
+      "options": []
+    },
+    {
+      "case_id": "DEMO-X5-WITH-STATEMENT",
+      "score": 589,
+      "grade": "B",
+      "outcome": "MANUAL_REVIEW",
+      "reason_codes": [
+        "MR_INCOME_DOCUMENT_CHECK"
+      ],
+      "values": {
+        "income_confirmed": "650000.00",
+        "income_source": "BANK_STATEMENT",
+        "revenue_mismatch": null,
+        "income_for_dti": "650000.00",
+        "existing_payments": "0.00",
+        "max_debt_load": "0.25",
+        "allowed_payment": "162500.00",
+        "rate_percent": "22.50",
+        "requested_payment": "65684.63",
+        "max_amount_requested_term": "1730000.00"
+      },
+      "options": [
+        [
+          "REQUESTED",
+          "700000.00",
+          12,
+          "22.50",
+          "65684.63",
+          true
+        ]
+      ]
+    },
+    {
+      "case_id": "DEMO-X6",
+      "score": 444,
+      "grade": "E",
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "DCL_LOW_SCORE"
+      ],
+      "values": null,
+      "options": []
+    },
+    {
+      "case_id": "DEMO-X7",
+      "score": 639,
+      "grade": "A",
+      "outcome": "DECLINED",
+      "reason_codes": [
+        "SF_COMPLIANCE"
+      ],
+      "values": null,
+      "options": []
+    }
+  ],
+  "golden": {
+    "cases": 63,
+    "by_group": {
+      "demo": 15,
+      "boundary": 30,
+      "population": 12,
+      "mockgen": 6
+    }
+  }
+}

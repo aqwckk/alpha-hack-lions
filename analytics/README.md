@@ -1,0 +1,54 @@
+# analytics: скоринговая модель, политика и синтетические данные
+
+Dev-time инструмент аналитика. В рантайме сервисов ML-библиотек нет: бэкенд читает готовые JSON-конфиги из `artifacts/` и считает балл простым суммированием.
+
+## Запуск
+
+Нужны `uv` и Python 3.12 (uv скачает его сам, если локально нет).
+
+```bash
+cd analytics
+uv sync --python 3.12          # один раз: окружение по uv.lock
+uv run --python 3.12 python -m src.build_all
+```
+
+Сборка занимает около 10 секунд, полностью детерминирована (фиксированные seed) и при повторном запуске дает побитно те же файлы. Если любая проверка согласованности не проходит, команда завершается с `SANITY CHECK FAILED` и ненулевым кодом.
+
+Что делает `src.build_all`:
+
+1. Генерирует популяцию 12 000 синтетических заявок МСП в двух когортах (2024H2 и 2025H1) со скрытым процессом дефолта.
+2. Строит балльную карту: биннинг, WoE/IV, отбор признаков, логистическая регрессия, PDO-шкалирование, грейды A-E, валидация (Gini, KS, PSI, калибровка). Пишет `artifacts/scorecard.v1.json`, графики в `docs/analytics/img/`.
+3. Проверяет, что эталонная реализация на чистом Python (`src/oracle`) дает тот же балл, что и конвейер обучения.
+4. Калибрует политику на потоке заявок (ставки по грейдам, лимиты долговой нагрузки), пишет `artifacts/policy.v1.json`.
+5. Собирает 12 демо-компаний и тестовые учетные записи, проверяет, что сценарии S1-S5 проходят ровно по пути из [docs/product/demo-scenarios.md](../docs/product/demo-scenarios.md).
+6. Пишет golden-файл `artifacts/expected_outcomes.json` (63 случая) и проверяет ожидаемые исходы граничных случаев.
+7. Симулирует 90 дней истории заявок и событий для экрана метрик (`artifacts/synthetic_applications.json`) и считает по ней метрики.
+8. Пишет сводку чисел `artifacts/build_report.json`.
+
+## Структура
+
+| Путь | Что внутри |
+|---|---|
+| `pyproject.toml`, `uv.lock` | зависимости (numpy, pandas, scikit-learn, matplotlib), версии зафиксированы |
+| `src/oracle/` | эталонная реализация для бэкенда, только stdlib и `Decimal`: `money.py` (аннуитет, округления), `inn.py` (контрольные суммы ИНН и ОГРН, маскирование), `features.py` (признаки), `scoring.py` (балл и грейд), `policy.py` (POL-01...POL-07) |
+| `src/mockgen.py` | детерминированный генератор профиля по ИНН (спецификация для `services/integrations-mock`, только stdlib) |
+| `src/config_base.py` | статические части конфигов: каталог продуктов, справочник кодов причин, описание признаков, версии |
+| `src/population.py` | популяция для обучения и скрытый процесс дефолта |
+| `src/model.py` | разработка и валидация балльной карты |
+| `src/calibrate_policy.py` | калибровка политики и доли исходов |
+| `src/demo_data.py` | демо-компании и тестовые пользователи |
+| `src/golden.py` | golden-случаи |
+| `src/history.py` | симуляция истории заявок по стейт-машине |
+| `src/metrics.py` | эталонный расчет метрик экрана BK-06 по событиям |
+| `src/plots.py` | графики отчета |
+| `artifacts/` | результаты сборки, описание схем в [artifacts/README.md](artifacts/README.md) |
+
+Отчеты: [docs/analytics/](../docs/analytics/README.md).
+
+## Что передается бэкенду
+
+- `artifacts/scorecard.v1.json`, `artifacts/policy.v1.json`: загружаются при старте api и воркера, версия и sha256 пишутся в `CONFIG_VERSION_LOADED`.
+- `src/oracle/*`: спецификация расчета; можно переносить код как есть (только stdlib).
+- `artifacts/expected_outcomes.json`: один параметризованный golden-тест.
+- `artifacts/demo_companies.json`, `src/mockgen.py`: данные и генератор для мока.
+- `artifacts/demo_users.json`, `artifacts/synthetic_applications.json`: seed.

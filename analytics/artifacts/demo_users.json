@@ -1,0 +1,147 @@
+{
+  "schema": "demo-users",
+  "schema_version": 1,
+  "version": "demo-2026.10-v1",
+  "warning": "ДЕМО: тестовые учетные записи прототипа на синтетических данных. Пароли простые и публичные, использовать только в демо-окружении. В БД хранить только хеш пароля.",
+  "users": [
+    {
+      "login": "client.irina",
+      "password": "Demo-Client-2026",
+      "role": "CLIENT",
+      "full_name": "Примерова Ирина Олеговна",
+      "representative_role": "OWNER",
+      "persona": "P1 Ирина, ИП",
+      "scenarios": [
+        "S1"
+      ],
+      "company_inns": [
+        "002000010193"
+      ],
+      "is_demo": true
+    },
+    {
+      "login": "client.andrey",
+      "password": "Demo-Client-2026",
+      "role": "CLIENT",
+      "full_name": "Образцов Андрей Николаевич",
+      "representative_role": "CEO",
+      "persona": "P2 Андрей, директор ООО",
+      "scenarios": [
+        "S2"
+      ],
+      "company_inns": [
+        "0010002014"
+      ],
+      "is_demo": true
+    },
+    {
+      "login": "client.marina",
+      "password": "Demo-Client-2026",
+      "role": "CLIENT",
+      "full_name": "Шаблонова Марина Петровна",
+      "representative_role": "CFO",
+      "persona": "P3 Марина, финансовый директор ООО",
+      "scenarios": [
+        "S3"
+      ],
+      "company_inns": [
+        "0010003018"
+      ],
+      "is_demo": true
+    },
+    {
+      "login": "client.sergey",
+      "password": "Demo-Client-2026",
+      "role": "CLIENT",
+      "full_name": "Пробников Сергей Алексеевич",
+      "representative_role": "OWNER",
+      "persona": "P5 Сергей, начинающий ИП",
+      "scenarios": [
+        "S4"
+      ],
+      "company_inns": [
+        "002000040102"
+      ],
+      "is_demo": true
+    },
+    {
+      "login": "client.oleg",
+      "password": "Demo-Client-2026",
+      "role": "CLIENT",
+      "full_name": "Набросков Олег Павлович",
+      "representative_role": "FINANCE_MANAGER",
+      "persona": "P4 Олег, уполномоченный сотрудник",
+      "scenarios": [
+        "S5",
+        "S5b"
+      ],
+      "company_inns": [
+        "0010005015"
+      ],
+      "is_demo": true
+    },
+    {
+      "login": "client.demo",
+      "password": "Demo-Client-2026",
+      "role": "CLIENT",
+      "full_name": "Тестов Демо Демович",
+      "representative_role": "OTHER_AUTHORIZED",
+      "persona": "учетная запись для свободной проверки жюри",
+      "scenarios": [
+        "EXTRA"
+      ],
+      "company_inns": [
+        "0010006019",
+        "002000070107",
+        "0010008016",
+        "002000090181",
+        "002000100136",
+        "0010011019",
+        "0010012012"
+      ],
+      "is_demo": true
+    },
+    {
+      "login": "uw.dmitry",
+      "password": "Demo-Uw-2026",
+      "role": "UNDERWRITER",
+      "full_name": "Эскизов Дмитрий Романович",
+      "representative_role": null,
+      "persona": "B1 Дмитрий, андеррайтер",
+      "scenarios": [
+        "S3",
+        "S5b"
+      ],
+      "company_inns": [],
+      "is_demo": true
+    },
+    {
+      "login": "uw.anna",
+      "password": "Demo-Uw-2026",
+      "role": "UNDERWRITER",
+      "full_name": "Черновикова Анна Павловна",
+      "representative_role": null,
+      "persona": "второй андеррайтер",
+      "scenarios": [
+        "гонка Взять в работу"
+      ],
+      "company_inns": [],
+      "is_demo": true
+    },
+    {
+      "login": "risk.elena",
+      "password": "Demo-Risk-2026",
+      "role": "RISK_MANAGER",
+      "full_name": "Шаблонова Елена Николаевна",
+      "representative_role": null,
+      "persona": "B2 Елена, риск-менеджер",
+      "scenarios": [
+        "S3",
+        "метрики",
+        "аудит"
+      ],
+      "company_inns": [],
+      "is_demo": true
+    }
+  ]
+}
