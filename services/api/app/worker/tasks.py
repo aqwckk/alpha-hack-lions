@@ -334,9 +334,9 @@ def decide(job: dict[str, Any], actor: Actor) -> None:
         now = utcnow()
         if outcome in (Outcome.APPROVED, Outcome.COUNTER_OFFER):
             apply_transition(session, app, "T-19", actor, trigger=Trigger.POLICY_OFFER, expected_version=app.version, changes={"decided_at": now})
+            emit(session, "DECISION_MADE", actor, application=app, payload=decision_made_payload(app, decision, result["options"]))
             offer = create_offer(session, app, decision, result["options"], actor)
             app.current_offer_id = offer.id
-            emit(session, "DECISION_MADE", actor, application=app, payload=decision_made_payload(app, decision, result["options"]))
         elif outcome == Outcome.DECLINED:
             apply_transition(session, app, "T-20", actor, trigger=Trigger.POLICY_DECLINED, expected_version=app.version, changes={"decided_at": now})
             for code in result["reason_codes"]:

@@ -244,9 +244,9 @@ def decide_positive(session: Session, actor: Actor, app: Application, *, command
         notify_role(session, Role.RISK_MANAGER, "NTF_EMP_APPROVAL_REQUESTED", application=app, amount=fmt_money(max(dec(o["amount"]) for o in built)))
         return app
     apply_transition(session, app, "T-27", actor, trigger=command, expected_version=expected_version, ctx=gctx, changes={"decided_at": utcnow()})
+    emit(session, "DECISION_MADE", actor, application=app, payload=decision_made_payload(app, decision, built))
     offer = create_offer(session, app, decision, built, actor)
     app.current_offer_id = offer.id
-    emit(session, "DECISION_MADE", actor, application=app, payload=decision_made_payload(app, decision, built))
     return app
 
 
@@ -258,10 +258,10 @@ def confirm_decision(session: Session, actor: Actor, app: Application, *, expect
     apply_transition(session, app, "T-31", actor, trigger=Command.CONFIRM_DECISION, expected_version=expected_version, changes={"decided_at": utcnow()})
     proposal.status, proposal.confirmed_by, proposal.decided_by = "FINAL", actor.user_id, proposal.proposed_by
     session.flush()
-    offer = create_offer(session, app, proposal, proposal.proposed_options or [], actor)
-    app.current_offer_id = offer.id
     emit(session, "FOUR_EYES_APPROVED", actor, application=app, payload={"decision_id": str(proposal.id), "proposed_by": str(proposal.proposed_by), "confirmed_by": str(actor.user_id), "trigger": proposal.four_eyes_trigger, "comment_id": str(c.id) if c else None})
     emit(session, "DECISION_MADE", actor, application=app, payload=decision_made_payload(app, proposal, proposal.proposed_options or []))
+    offer = create_offer(session, app, proposal, proposal.proposed_options or [], actor)
+    app.current_offer_id = offer.id
     return app
 
 

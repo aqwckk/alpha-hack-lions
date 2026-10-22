@@ -341,7 +341,16 @@ class _SafeDict(dict):
         return "{" + key + "}"
 
 
+def _humanize(key: str, value: Any) -> Any:
+    # Russian number format for percents and lower-case names inside a sentence.
+    if key.endswith("_pct"):
+        return str(value).replace(".", ",")
+    if key == "document_name" and isinstance(value, str) and len(value) > 1 and value[1].islower():
+        return value[0].lower() + value[1:]
+    return value
+
+
 def render(template: str | None, values: dict[str, Any]) -> str | None:
     if template is None:
         return None
-    return template.format_map(_SafeDict({k: v for k, v in values.items() if v is not None}))
+    return template.format_map(_SafeDict({k: _humanize(k, v) for k, v in values.items() if v is not None}))
