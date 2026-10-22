@@ -43,7 +43,7 @@
 | POL-02 | Подтверждение дохода | нет ни оборотов по счету в банке, ни отчетности ГИР БО, и клиент еще не приложил выписку `BANK_STATEMENT` | `NEEDS_INFO`, если `auto_info_request_count < max_auto_info_cycles`; иначе `MANUAL_REVIEW` | `NI_INCOME_NOT_CONFIRMED` или `MR_INFO_CYCLES_EXCEEDED` |
 | POL-03 | Минимальный грейд | грейд входит в `decline_grades` продукта | `DECLINED` | `DCL_LOW_SCORE` |
 | POL-04 | Расчет долговой нагрузки | всегда (без исхода): считаются подтвержденный доход, допустимый платеж, запрошенный платеж, максимальные суммы (раздел 4) | промежуточные значения | |
-| POL-05 | Причины ручного рассмотрения | собираются все: режим продукта `MANUAL`; грейд в `gray_grades`; сумма больше `auto_approval_limit`; заявленная выручка выше подтвержденной больше чем на `revenue_mismatch_threshold`; недоимка больше 0, но меньше `tax_arrears_stop_amount`; доход подтвержден только выпиской клиента; покрытие залогом ниже `min_collateral_coverage`; `manual_review_required = true` | `MANUAL_REVIEW`, если найдена хотя бы одна причина; рассчитывается рекомендация (раздел 6) | `MR_*` |
+| POL-05 | Причины ручного рассмотрения | собираются все: режим продукта `MANUAL`; грейд в `gray_grades`; сумма больше `auto_approval_limit` (кроме продуктов с режимом `MANUAL`, где эту роль играет первая причина); заявленная выручка выше подтвержденной больше чем на `revenue_mismatch_threshold`; недоимка больше 0, но меньше `tax_arrears_stop_amount`; доход подтвержден только выпиской клиента; покрытие залогом ниже `min_collateral_coverage`; `manual_review_required = true` | `MANUAL_REVIEW`, если найдена хотя бы одна причина; рассчитывается рекомендация (раздел 6) | `MR_*` |
 | POL-06 | Одобрение | запрошенный платеж не больше допустимого | `APPROVED`; ставка из матрицы; при цели из `credit_line_suggest_purposes` добавляется альтернативный вариант "кредитная линия" (Should) | нет (или `CO_PRODUCT_ALTERNATIVE` для альтернативы) |
 | POL-07 | Контрпредложение | запрошенный платеж больше допустимого | `COUNTER_OFFER`, если построен хотя бы один вариант (раздел 5); иначе `DECLINED` | `CO_DEBT_LOAD`, `CO_PRODUCT_ALTERNATIVE` или `DCL_AFFORDABILITY` |
 
@@ -78,9 +78,9 @@
 
 | Тип варианта `option_type` | Как считается | Условия включения |
 |---|---|---|
-| `AMOUNT_REDUCED` (меньшая сумма) | тот же продукт и срок, сумма = `max_amount(запрошенный срок)` | сумма не меньше `amount_min` продукта и не меньше `counter_offer_min_share` (исходно 0,3) от запрошенной; не больше `auto_approval_limit` |
+| `AMOUNT_REDUCED` (меньшая сумма) | тот же продукт и срок, сумма = `max_amount(запрошенный срок)` | сумма не меньше `amount_min` продукта и не меньше `counter_offer_min_share` (исходно 0,3) от запрошенной; не больше `auto_approval_limit` (в режиме рекомендации для специалиста не применяется) |
 | `TERM_EXTENDED` (больший срок) | тот же продукт и сумма, срок = минимальный n от запрошенного + 1 до `term_max_months`, при котором аннуитет не больше `allowed_payment` | такой срок существует |
-| `PRODUCT_CHANGED` (другой продукт: кредитная линия) | продукт `CREDIT_LINE`, лимит L = минимум из `max_amount(tranche_max_term_months)` по ставке линии, `amount_max` линии и `auto_approval_limit` линии | исходный продукт `EXPRESS` или `WORKING_CAPITAL`; цель входит в `allowed_purposes` линии; возраст бизнеса не меньше минимума линии; грейд не в `decline_grades` и не в `gray_grades` линии; L не меньше `amount_min` линии |
+| `PRODUCT_CHANGED` (другой продукт: кредитная линия) | продукт `CREDIT_LINE`, лимит L = минимум из `max_amount(tranche_max_term_months)` по ставке линии, `amount_max` линии, запрошенной суммы и `auto_approval_limit` линии (последнее только в авторежиме); платеж варианта показывается как аннуитет всего лимита на `tranche_max_term_months`, срок договора равен запрошенному сроку в пределах срока линии | исходный продукт `EXPRESS` или `WORKING_CAPITAL`; цель входит в `allowed_purposes` линии; возраст бизнеса не меньше минимума линии; грейд не в `decline_grades` и не в `gray_grades` линии; L не меньше `amount_min` линии |
 
 - Флаг `recommended = true` получает `TERM_EXTENDED`, если он есть (клиент получает всю сумму), иначе `AMOUNT_REDUCED`, иначе `PRODUCT_CHANGED`.
 - Если ни один вариант не построен, результат `DECLINED` с кодом `DCL_AFFORDABILITY`.
@@ -91,7 +91,7 @@
 
 ## 6. Рекомендация политики для ручного рассмотрения
 
-Когда POL-05 направляет заявку специалисту, политика все равно выполняет POL-06 и POL-07 в режиме рекомендации и сохраняет `recommendation`: предлагаемый исход (`APPROVED`, `COUNTER_OFFER` или `DECLINED`), `allowed_payment`, `max_amount(запрошенный срок)` и рассчитанные варианты. Андеррайтер видит рекомендацию в карточке и может решить иначе.
+Когда POL-05 направляет заявку специалисту, политика все равно выполняет POL-06 и POL-07 в режиме рекомендации (без ограничения `auto_approval_limit`, полномочия специалиста ограничены `underwriter_authority_limit`) и сохраняет `recommendation`: предлагаемый исход (`APPROVED`, `COUNTER_OFFER` или `DECLINED`), `allowed_payment`, `max_amount(запрошенный срок)` и рассчитанные варианты. Андеррайтер видит рекомендацию в карточке и может решить иначе.
 
 **Переопределение (`override = true`)** фиксируется, если андеррайтер:
 
@@ -120,7 +120,7 @@
 
 ## 8. Конфигурируемые параметры
 
-Все параметры ниже не задаются в коде. Исходные значения продуктов заданы в [../product/product-catalog.md](../product/product-catalog.md); значения, помеченные "аналитик", определяет и калибрует аналитик.
+Все параметры ниже не задаются в коде. Исходные значения продуктов заданы в [../product/product-catalog.md](../product/product-catalog.md); значения, помеченные "аналитик", определяет и калибрует аналитик. Действующие значения и обоснование: [../analytics/decision-policy.md](../analytics/decision-policy.md), конфиги `analytics/artifacts/scorecard.v1.json` и `analytics/artifacts/policy.v1.json`.
 
 ### 8.1. Скоринговая карта (`scorecard`, владелец: аналитик)
 
@@ -142,12 +142,14 @@
 | `products.<CODE>.*` | параметры продуктов из каталога: `direct_application`, `applicant_types`, `allowed_purposes`, `amount_min`, `amount_max`, `amount_step`, `term_min_months`, `term_max_months`, `base_rate_percent`, `review_mode`, `auto_approval_limit`, `green_grades`, `gray_grades`, `decline_grades`, `min_business_age_months`, `requires_owner_guarantee_for`, `requires_collateral`, `min_collateral_coverage`, `required_documents`, `tranche_max_term_months` | см. каталог |
 | `blocked_company_statuses` | статусы субъекта, при которых отказ | `LIQUIDATING`, `BANKRUPTCY`, `REORGANIZING`, `CEASED` |
 | `unreliable_flags` | признаки недостоверности | `UNRELIABLE_ADDRESS`, `UNRELIABLE_DIRECTOR`, `MASS_ADDRESS`, `MASS_DIRECTOR`, `DISQUALIFIED_DIRECTOR` |
-| `current_delinquency_min_days` | порог текущей просрочки для стоп-фактора | аналитик |
-| `tax_arrears_stop_amount` | порог недоимки для отказа | аналитик |
-| `max_debt_load_by_grade` | максимальная доля платежей в месячной выручке по грейдам A-E | аналитик |
-| `rate_premium_by_grade` | надбавка к базовой ставке по грейдам A-E (матрица "продукт x грейд" получается сложением) | аналитик |
-| `revenue_mismatch_threshold` | допустимое превышение заявленной выручки над подтвержденной | 0,30 (из исследования, аналитик может уточнить) |
+| `current_delinquency_min_days` | порог текущей просрочки для стоп-фактора | 30 (аналитик) |
+| `tax_arrears_stop_amount` | порог недоимки для отказа | 100 000,00 руб. (аналитик) |
+| `max_debt_load_by_grade` | максимальная доля платежей в месячной выручке по грейдам A-E | 0,30 / 0,25 / 0,20 / 0,15 / 0,10 (аналитик) |
+| `rate_premium_by_grade` | надбавка к базовой ставке по грейдам A-E (матрица "продукт x грейд" получается сложением) | 0 / 0,5 / 2,0 / 5,5 / 13,5 п.п. (аналитик) |
+| `revenue_mismatch_threshold` | допустимое превышение заявленной выручки над подтвержденной | 0,30 (подтверждено аналитиком) |
 | `income_source_priority` | порядок источников дохода | `BANK_TURNOVER`, `FINANCIAL_STATEMENTS`, `BANK_STATEMENT` |
+| `min_turnover_months` | минимум месяцев оборотов, чтобы они подтверждали доход | 6 (аналитик) |
+| `compliance_stop_flags` | значения комплаенс-флага, дающие `SF_COMPLIANCE` | `RED` |
 | `counter_offer_min_share` | минимальная доля от запрошенной суммы для варианта `AMOUNT_REDUCED` | 0,3 |
 | `max_counter_options` | максимум вариантов в предложении | 3 |
 | `amount_rounding` | шаг округления сумм вариантов вниз | 10 000 руб. |

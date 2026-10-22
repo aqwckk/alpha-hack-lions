@@ -97,10 +97,10 @@
 | `REGISTRY` | ЕГРЮЛ (ООО) / ЕГРИП (ИП) | всегда | поля раздела 3 из реестра; `found` (bool) | стоп-факторы, возраст бизнеса, отрасль, автозаполнение | CONFIDENTIAL / RESTRICTED (ФИО) |
 | `FNS` | ФНС "Прозрачный бизнес" | всегда | `sme_category`, `tax_regime`, `employees_count`, `tax_arrears_amount`, `taxes_paid_last_year`, `unreliable_flags[]` (`UNRELIABLE_ADDRESS`, `UNRELIABLE_DIRECTOR`, `MASS_ADDRESS`, `MASS_DIRECTOR`, `DISQUALIFIED_DIRECTOR`) | стоп-факторы, факторы скоринга | CONFIDENTIAL |
 | `FINANCIAL_STATEMENTS` | ГИР БО | только ООО | `report_year`, `revenue`, `revenue_prev_year`, `net_profit`, `total_assets`, `equity` | подтвержденный доход, расхождение с анкетой, факторы скоринга | CONFIDENTIAL |
-| `CREDIT_BUREAU` | БКИ | только при действующем согласии `CONSENT_CREDIT_BUREAU` | `no_record` (нет кредитной истории), `active_loans_count`, `total_debt`, `monthly_payments_total`, `current_delinquency_days`, `current_delinquency_amount`, `max_delinquency_days_24m`, `delinquencies_30plus_24m`, `inquiries_90d`, `credit_history_months` | стоп-фактор просрочки, текущие платежи, факторы скоринга | RESTRICTED (кредитная история) |
+| `CREDIT_BUREAU` | БКИ | только при действующем согласии `CONSENT_CREDIT_BUREAU` | `no_record` (нет кредитной истории), `active_loans_count`, `total_debt`, `monthly_payments_total`, `current_delinquency_days`, `current_delinquency_amount`, `max_delinquency_days_12m`, `max_delinquency_days_24m`, `delinquencies_30plus_24m`, `inquiries_30d`, `inquiries_90d`, `credit_history_months` | стоп-фактор просрочки, текущие платежи, факторы скоринга | RESTRICTED (кредитная история) |
 | `BANK_TURNOVER` | внутренние данные банка | всегда | `has_account` (bool), `months_available`, `inflow_by_month[]` (12 значений), `avg_monthly_inflow_12m`, `compliance_flag` (`NONE`, `RED`; синтетический признак внутренних проверок) | подтвержденный доход, факторы скоринга, стоп-фактор `SF_COMPLIANCE` | CONFIDENTIAL (банковская тайна) |
 
-Мок каждого источника поддерживает настраиваемые задержку и ошибки (по ИНН или по глобальному переключателю) для сценария S5: таймаут, ответ 5xx, ошибка на первые N запросов.
+Точные тела ответов и признаки скоринга, которые из них вычисляются, описаны в [../../analytics/artifacts/README.md](../../analytics/artifacts/README.md) (разделы 3 и 6). Мок каждого источника поддерживает настраиваемые задержку и ошибки (по ИНН или по глобальному переключателю) для сценария S5: таймаут, ответ 5xx, ошибка на первые N запросов.
 
 ## 5. Документы
 
