@@ -1,0 +1,10 @@
+*
+!services/integrations-mock/pyproject.toml
+!services/integrations-mock/uv.lock
+!services/integrations-mock/app
+!analytics/artifacts/demo_companies.json
+!analytics/src/__init__.py
+!analytics/src/mockgen.py
+!analytics/src/oracle
+**/__pycache__
+**/*.pyc

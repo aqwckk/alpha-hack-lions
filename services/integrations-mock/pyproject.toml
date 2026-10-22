@@ -1,0 +1,12 @@
+[project]
+name = "integrations-mock"
+version = "1.0.0"
+description = "Simulators of external systems for the SME credit pipeline prototype: registry, tax service, financial statements, credit bureau, bank turnover, EDO and core banking"
+requires-python = "==3.12.*"
+dependencies = [
+    "fastapi==0.161.0",
+    "uvicorn[standard]==0.54.0",
+]
+
+[tool.uv]
+package = false
