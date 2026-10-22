@@ -18,6 +18,7 @@ from ..domain.dictionaries import (
     UNDERWRITER_INFO_CODES,
     fmt_dt,
     fmt_money,
+    plural_ru,
     render,
 )
 from ..domain.money import dec, max_amount_for_payment, money
@@ -328,7 +329,7 @@ def create_info_request(session: Session, app: Application, actor: Actor, *, sou
     for i, it in enumerate(items):
         session.add(InfoRequestItem(id=uuid.uuid4(), info_request_id=ir.id, position=i, **it))
     emit(session, "INFO_REQUESTED", actor, application=app, payload={"info_request_id": str(ir.id), "source": source, "items": [{"reason_code": it["reason_code"], "answer_type": it["answer_type"]} for it in items], "due_at": ir.due_at.isoformat(), "cycle_number": ir.cycle_number})
-    notify(session, app.client_user_id, "NTF_INFO_REQUESTED", application=app, k=len(items), due_at=fmt_dt(ir.due_at))
+    notify(session, app.client_user_id, "NTF_INFO_REQUESTED", application=app, k=len(items), k_text=plural_ru(len(items), "вопрос", "вопроса", "вопросов"), due_at=fmt_dt(ir.due_at))
     return ir
 
 

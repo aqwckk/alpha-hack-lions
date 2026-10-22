@@ -33,7 +33,7 @@ from ..schemas import (
 )
 from ..services import integrations
 from ..services.core import Actor, emit
-from .deps import client_actor
+from .deps import client_actor, current_actor
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
@@ -120,7 +120,7 @@ def match(body: MatchRequest, actor: Actor = Depends(client_actor)) -> dict[str,
 
 
 @router.post("/catalog/calculate", response_model=ScheduleResponse)
-def calculate(body: CalculateRequest, actor: Actor = Depends(client_actor)) -> dict[str, Any]:
+def calculate(body: CalculateRequest, actor: Actor = Depends(current_actor)) -> dict[str, Any]:
     """Annuity payment at the base rate of the product (or the given rate); schedule on request."""
     pol = get_registry().policy_content()
     if body.product_code not in pol["products"]:

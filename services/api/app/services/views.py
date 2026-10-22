@@ -22,6 +22,7 @@ from ..domain.dictionaries import (
     fmt_date,
     fmt_dt,
     fmt_money,
+    plural_ru,
     render,
 )
 from ..domain.money import annuity_payment
@@ -222,6 +223,7 @@ def status_text(ctx: AppContext, key: str, *, product: dict[str, Any], consents_
     elif key == "ACTION_REQUIRED" and ctx.open_info_request is not None:
         deadline = ctx.open_info_request.due_at
         values["k"] = ctx.session.execute(select(func.count()).select_from(InfoRequestItem).where(InfoRequestItem.info_request_id == ctx.open_info_request.id)).scalar_one()
+        values["k_text"] = plural_ru(values["k"], "уточнение", "уточнения", "уточнений")
     elif key == "SPECIALIST_REVIEW":
         deadline = app.review_due_at
         codes = app.manual_review_reasons or []
@@ -623,10 +625,11 @@ def user_names(session: Session, ids: set) -> dict[Any, str]:
     return {u.id: u.full_name for u in session.execute(select(User).where(User.id.in_(ids))).scalars()}
 
 
-def staff_list_item(session: Session, app: Application, names: dict[Any, str]) -> dict[str, Any]:
+def staff_list_item(session: Session, app: Application, names: dict[Any, str], reason_details: dict[str, Any] | None = None) -> dict[str, Any]:
     now = utcnow()
     codes = app.manual_review_reasons or []
-    reasons = employee_reasons(codes, {}) if codes else []
+    reason_ctx = {"inn": app.applicant_inn, "assignee": names.get(app.assignee_id), "amount": money_str(app.amount)}
+    reasons = employee_reasons(codes, reason_details or {}, reason_ctx) if codes else []
     return {
         "id": str(app.id),
         "application_number": app.application_number,

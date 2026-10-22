@@ -121,7 +121,14 @@ def list_applications(
     counters["mine"] = session.execute(base.where(Application.status.in_([Status.IN_REVIEW.value, Status.PENDING_RISK_APPROVAL.value]), Application.assignee_id == actor.user_id)).scalar_one()
     if actor.type == ActorType.RISK_MANAGER:
         counters["approval"] = session.execute(base.where(Application.status == Status.PENDING_RISK_APPROVAL.value)).scalar_one()
-    return {"items": [staff_list_item(session, a, names) for a in apps], "page": page, "page_size": page_size, "total": total, "counters": counters}
+    # reason texts need the values of the latest automatic decision (one batched query for the page)
+    details: dict[Any, dict[str, Any]] = {}
+    with_reasons = [a.id for a in apps if a.manual_review_reasons]
+    if with_reasons:
+        rows = session.execute(select(Decision.application_id, Decision.reason_details).where(Decision.application_id.in_(with_reasons), Decision.mode == "AUTO").order_by(Decision.created_at))
+        for app_id, reason_details in rows:
+            details[app_id] = reason_details or {}
+    return {"items": [staff_list_item(session, a, names, details.get(a.id)) for a in apps], "page": page, "page_size": page_size, "total": total, "counters": counters}
 
 
 @router.get("/applications/{application_id}", response_model=StaffCard, responses=ERRORS)

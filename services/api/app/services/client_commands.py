@@ -209,7 +209,7 @@ def _early_warnings(product_code: str, registry: dict[str, Any], fns: dict[str, 
         codes.append("SF_UNRELIABLE_REGISTRY_DATA")
     out = []
     for code, reason in zip(codes, [client_reasons([c], details)[0] for c in codes], strict=True):
-        out.append({"reason_code": code, "text": f"Скорее всего, банк откажет: {reason['text']}", "next_step": reason["next_step"]})
+        out.append({"reason_code": code, "text": "Скорее всего, банк откажет: " + reason["text"][:1].lower() + reason["text"][1:], "next_step": reason["next_step"]})
     return out
 
 

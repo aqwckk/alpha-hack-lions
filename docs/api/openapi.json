@@ -4451,6 +4451,32 @@
         }
       }
     },
+    "/api/v1/meta": {
+      "get": {
+        "tags": [
+          "service"
+        ],
+        "summary": "Public Meta",
+        "description": "Public UI flags before login: demo mode (test accounts hint, demo controls) and optional AI module.",
+        "operationId": "public_meta_api_v1_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Public Meta Api V1 Meta Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health/live": {
       "get": {
         "tags": [

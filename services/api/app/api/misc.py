@@ -24,6 +24,14 @@ from .deps import current_actor, staff_actor
 notifications = APIRouter(prefix="/api/v1/notifications", tags=["notifications"])
 demo = APIRouter(prefix="/api/v1/demo", tags=["demo"])
 health = APIRouter(tags=["service"])
+meta = APIRouter(prefix="/api/v1/meta", tags=["service"])
+
+
+@meta.get("")
+def public_meta() -> dict[str, bool]:
+    """Public UI flags before login: demo mode (test accounts hint, demo controls) and optional AI module."""
+    s = get_settings()
+    return {"demo_mode": s.demo_mode, "ai_enabled": bool(s.ollama_url)}
 
 
 @notifications.get("")

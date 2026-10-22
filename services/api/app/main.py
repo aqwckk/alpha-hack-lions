@@ -149,7 +149,7 @@ def create_app() -> FastAPI:
         codes = {404: "NOT_FOUND", 405: "METHOD_NOT_ALLOWED"}
         return JSONResponse(status_code=exc.status_code, content=ApiError("Ресурс не найден" if exc.status_code == 404 else str(exc.detail), code=codes.get(exc.status_code, "HTTP_ERROR"), status=exc.status_code).body(request.state.request_id))
 
-    for r in (auth.router, catalog.router, client.router, bank.router, risk.router, misc.notifications, misc.demo, misc.health):
+    for r in (auth.router, catalog.router, client.router, bank.router, risk.router, misc.notifications, misc.demo, misc.meta, misc.health):
         app.include_router(r)
     return app
 
