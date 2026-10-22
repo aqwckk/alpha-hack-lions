@@ -1,0 +1,204 @@
+### Основной сценарий через API (формат VS Code REST Client: именованные запросы и ссылки на ответы).
+### Порядок: S1 клиента от подбора до выдачи, затем рабочее место сотрудника и риск-менеджера.
+### Перед повтором закройте прошлую заявку клиента (WITHDRAW) или выполните make reset.
+
+@api = http://localhost:8000/api
+@json = application/json
+
+### 1. Вход клиента
+# @name client
+POST {{api}}/v1/auth/login
+Content-Type: {{json}}
+
+{"login": "client.irina", "password": "Demo-Client-2026"}
+
+###
+@clientToken = {{client.response.body.access_token}}
+
+### 2. Подбор продукта по задаче
+POST {{api}}/v1/catalog/match
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+
+{"purpose": "EQUIPMENT", "amount": "1200000", "term_months": 24, "inn": "002000010193"}
+
+### 3. Создание черновика (T-01)
+# @name created
+POST {{api}}/v1/applications
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+Idempotency-Key: {{$guid}}
+
+{"product_code": "EXPRESS", "purpose": "EQUIPMENT", "amount": "1200000", "term_months": 24}
+
+###
+@appId = {{created.response.body.id}}
+
+### 4. Автозаполнение по ИНН (моки ЕГРИП и ФНС)
+# @name prefilled
+POST {{api}}/v1/applications/{{appId}}/prefill
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+
+{"inn": "002000010193", "expected_version": {{created.response.body.version}}}
+
+### 5. Автосохранение полей анкеты
+# @name patched
+PATCH {{api}}/v1/applications/{{appId}}
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+
+{"expected_version": {{prefilled.response.body.application.version}}, "representative_role": "OWNER", "monthly_revenue_declared": "1500000", "existing_monthly_payments_declared": "0"}
+
+### 6. Согласия (три отдельных)
+PUT {{api}}/v1/applications/{{appId}}/consents/CONSENT_PERSONAL_DATA
+Authorization: Bearer {{clientToken}}
+
+###
+PUT {{api}}/v1/applications/{{appId}}/consents/CONSENT_CREDIT_BUREAU
+Authorization: Bearer {{clientToken}}
+
+###
+# @name consented
+PUT {{api}}/v1/applications/{{appId}}/consents/AUTHORITY_CONFIRMATION
+Authorization: Bearer {{clientToken}}
+
+### 7. Отправка (T-03). Повтор с тем же ключом вернет тот же ответ с Idempotent-Replayed: true
+POST {{api}}/v1/applications/{{appId}}/submit
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+Idempotency-Key: s1-submit-{{appId}}
+
+{"expected_version": {{consented.response.body.version}}}
+
+### 8. Статус заявки (опрос раз в 3 секунды до client_status = DECISION_READY)
+# @name decided
+GET {{api}}/v1/applications/{{appId}}
+Authorization: Bearer {{clientToken}}
+
+### 9. Принять вариант предложения (T-33)
+# @name accepted
+POST {{api}}/v1/applications/{{appId}}/offer/accept
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+Idempotency-Key: {{$guid}}
+
+{"expected_version": {{decided.response.body.version}}, "option_id": "{{decided.response.body.offer.options[0].id}}"}
+
+### 10. Документы готовы (опрос до signing != null), затем код подписания (в прототипе показывается в кабинете)
+# @name signing
+GET {{api}}/v1/applications/{{appId}}
+Authorization: Bearer {{clientToken}}
+
+###
+# @name code
+POST {{api}}/v1/applications/{{appId}}/signing-code
+Authorization: Bearer {{clientToken}}
+Idempotency-Key: {{$guid}}
+
+### 11. Подписание (T-39); выдача (T-42) выполняется воркером через мок АБС
+POST {{api}}/v1/applications/{{appId}}/sign
+Authorization: Bearer {{clientToken}}
+Content-Type: {{json}}
+Idempotency-Key: {{$guid}}
+
+{"expected_version": {{signing.response.body.version}}, "code": "{{code.response.body.code}}"}
+
+### 12. Уведомления клиента
+GET {{api}}/v1/notifications
+Authorization: Bearer {{clientToken}}
+
+### 13. Риск-менеджер: карточка заявки со скорингом, путем правил и историей
+# @name risk
+POST {{api}}/v1/auth/login
+Content-Type: {{json}}
+
+{"login": "risk.elena", "password": "Demo-Risk-2026"}
+
+###
+@riskToken = {{risk.response.body.access_token}}
+
+###
+GET {{api}}/v1/bank/applications/{{appId}}?view_context=SEARCH
+Authorization: Bearer {{riskToken}}
+
+### 14. Все заявки (кроме черновиков) и вкладка "На согласовании"
+GET {{api}}/v1/bank/applications?tab=all&include_history=false
+Authorization: Bearer {{riskToken}}
+
+###
+GET {{api}}/v1/bank/applications?tab=approval
+Authorization: Bearer {{riskToken}}
+
+### 15. Метрики за 30 дней (включая синтетическую историю), версии конфигов, аудит
+GET {{api}}/v1/risk/metrics?period_days=30
+Authorization: Bearer {{riskToken}}
+
+###
+GET {{api}}/v1/risk/configs
+Authorization: Bearer {{riskToken}}
+
+###
+GET {{api}}/v1/risk/audit?access_only=true
+Authorization: Bearer {{riskToken}}
+
+### 16. Андеррайтер: очередь ручного рассмотрения (после отправки заявки S3 клиентом client.marina)
+# @name uw
+POST {{api}}/v1/auth/login
+Content-Type: {{json}}
+
+{"login": "uw.dmitry", "password": "Demo-Uw-2026"}
+
+###
+@uwToken = {{uw.response.body.access_token}}
+
+###
+# @name queue
+GET {{api}}/v1/bank/applications?tab=queue
+Authorization: Bearer {{uwToken}}
+
+###
+@reviewId = {{queue.response.body.items[0].id}}
+
+### 17. Взять в работу (T-25)
+# @name taken
+POST {{api}}/v1/bank/applications/{{reviewId}}/take
+Authorization: Bearer {{uwToken}}
+Content-Type: {{json}}
+Idempotency-Key: {{$guid}}
+
+{"expected_version": {{queue.response.body.items[0].version}}}
+
+### 18. Структурированный дозапрос (T-29)
+POST {{api}}/v1/bank/applications/{{reviewId}}/request-info
+Authorization: Bearer {{uwToken}}
+Content-Type: {{json}}
+Idempotency-Key: {{$guid}}
+
+{
+  "expected_version": {{taken.response.body.version}},
+  "comment": "Нужно пояснение роста выручки и оценка залога",
+  "items": [
+    {"reason_code": "NI_DATA_MISMATCH_EXPLANATION", "answer_type": "TEXT"},
+    {"reason_code": "NI_DATA_MISMATCH_EXPLANATION", "answer_type": "FIELD", "field_name": "monthly_revenue_declared"},
+    {"reason_code": "NI_COLLATERAL_DOCUMENTS", "answer_type": "DOCUMENT", "document_type": "COLLATERAL_VALUATION"}
+  ]
+}
+
+### 19. Сброс симулятора сбоев (демо S5) и глобальное отключение БКИ (S5b)
+POST {{api}}/v1/demo/integrations/reset
+Authorization: Bearer {{riskToken}}
+
+###
+PUT {{api}}/v1/demo/integrations/outage
+Authorization: Bearer {{riskToken}}
+Content-Type: {{json}}
+
+{"source": "CREDIT_BUREAU", "failure": "HTTP_500"}
+
+###
+PUT {{api}}/v1/demo/integrations/outage
+Authorization: Bearer {{riskToken}}
+Content-Type: {{json}}
+
+{"source": "CREDIT_BUREAU", "failure": null}
