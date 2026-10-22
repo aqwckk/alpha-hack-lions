@@ -1,0 +1,20 @@
+# allowlist: only what the api image needs (context is the repository root)
+*
+!services/api/pyproject.toml
+!services/api/uv.lock
+!services/api/alembic.ini
+!services/api/migrations
+!services/api/app
+!services/api/tests
+!services/integrations-mock/app
+!analytics/artifacts/scorecard.v1.json
+!analytics/artifacts/policy.v1.json
+!analytics/artifacts/demo_users.json
+!analytics/artifacts/demo_companies.json
+!analytics/artifacts/synthetic_applications.json
+!analytics/artifacts/expected_outcomes.json
+!analytics/src/__init__.py
+!analytics/src/mockgen.py
+!analytics/src/oracle
+**/__pycache__
+**/*.pyc

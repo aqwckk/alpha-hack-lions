@@ -1,0 +1,31 @@
+[project]
+name = "credit-api"
+version = "1.0.0"
+description = "Credit pipeline API and worker for the SME credit cabinet prototype"
+requires-python = "==3.12.*"
+dependencies = [
+    "alembic==1.20.1",
+    "argon2-cffi==25.1.0",
+    "fastapi==0.161.0",
+    "httpx==0.28.1",
+    "prometheus-client==0.26.0",
+    "psycopg[binary]==3.3.6",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.1",
+    "pyjwt==2.15.1",
+    "python-multipart==0.0.32",
+    "sqlalchemy==2.1.6",
+    "uvicorn[standard]==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"
