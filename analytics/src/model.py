@@ -9,7 +9,7 @@ from decimal import Decimal
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import brier_score_loss, roc_auc_score
+from sklearn.metrics import brier_score_loss, roc_auc_score, roc_curve
 from sklearn.model_selection import train_test_split
 
 from .config_base import AS_OF, AUTHOR, FACTOR_META, FEATURE_DEFINITIONS, FEATURE_PARAMETERS, SCORECARD_VERSION
@@ -161,11 +161,11 @@ def woe_transform(df: pd.DataFrame, fac: dict) -> pd.Series:
 
 # ---------------------------------------------------------------- metrics
 def gini_ks(y, score) -> tuple[float, float, float]:
-    auc = roc_auc_score(y, -np.asarray(score))
-    s = pd.DataFrame({"y": y, "s": score}).sort_values("s")
-    cb = (s["y"] == 1).cumsum() / max((s["y"] == 1).sum(), 1)
-    cg = (s["y"] == 0).cumsum() / max((s["y"] == 0).sum(), 1)
-    ks = float((cb - cg).abs().max())
+    risk = -np.asarray(score)
+    auc = roc_auc_score(y, risk)
+    # ROC thresholds include tied scores together; row order cannot affect KS.
+    fpr, tpr, _ = roc_curve(y, risk, drop_intermediate=False)
+    ks = float(np.abs(tpr - fpr).max())
     return float(auc), float(2 * auc - 1), ks
 
 

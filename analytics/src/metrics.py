@@ -55,6 +55,7 @@ def compute_metrics(events: list[dict], period_start: str, period_end: str, sla_
         if e["payload"]["time_from_submit_sec"] <= lim:
             in_sla += 1
     finals = list(first_final.values())
+    auto_times = [e["payload"]["time_from_submit_sec"] for e in finals if e["payload"]["mode"] == "AUTO"]
     manual_finals = [(a, e) for a, e in first_final.items() if e["payload"]["mode"] == "MANUAL"]
     manual_ok = sum(1 for a, e in manual_finals if not has(by_app[a], "REVIEW_SLA_BREACHED"))
     info_apps = [a for a in submitted if has(by_app[a], "INFO_REQUESTED")]
@@ -99,7 +100,7 @@ def compute_metrics(events: list[dict], period_start: str, period_end: str, sla_
         "applications_created": created_n,
         "north_star": share(in_sla, created_n),
         "time_to_decision_median_sec": median([e["payload"]["time_from_submit_sec"] for e in finals]) if finals else None,
-        "time_to_decision_auto_median_sec": median([e["payload"]["time_from_submit_sec"] for e in finals if e["payload"]["mode"] == "AUTO"]) if finals else None,
+        "time_to_decision_auto_median_sec": median(auto_times) if auto_times else None,
         "wizard_conversion": share(len(wizard_to_app & wizard_started), len(wizard_started)),
         "fill_conversion": share(len(submitted), created_n),
         "fill_duration_median_sec": median(fill) if fill else None,
