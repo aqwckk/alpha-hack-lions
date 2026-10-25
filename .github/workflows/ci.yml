@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: enable Windows line conversion
         run: git config --global core.autocrlf true
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: verify container inputs after Windows checkout
         run: python scripts/check_checkout.py
 
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: pytest against PostgreSQL 17
         run: make test
 
@@ -38,12 +38,12 @@ jobs:
       run:
         working-directory: analytics
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: python -m pip install uv==0.13.0
       - run: uv run --python 3.12 --frozen python -m unittest discover -s tests -v
       - run: uv run --python 3.12 --frozen python -m src.build_all
       - name: verify reproducible artifacts
-        run: git diff --exit-code -- artifacts ../docs/analytics/img
+        run: git diff --exit-code -- artifacts
 
   web:
     runs-on: ubuntu-24.04
@@ -52,8 +52,8 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -68,7 +68,7 @@ jobs:
     timeout-minutes: 25
     needs: [checkout, backend, analytics, web]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: start stack
         run: docker compose up --build -d --wait
       - name: demo scenarios through nginx

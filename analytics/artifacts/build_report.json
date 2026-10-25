@@ -216,19 +216,19 @@
       }
     },
     "coefficients": {
-      "bki_max_delinquency_days_12m": -0.7893438014788463,
-      "bki_inquiries_90d": -0.7648259437581612,
-      "turnover_volatility": -0.525855235361583,
-      "confirmed_monthly_revenue": -0.7047846929201091,
-      "net_margin": -0.4492706766070556,
-      "business_age_months": -0.47244688951436137,
-      "revenue_growth": -0.48914459730564375,
-      "debt_load_ratio": -0.8886389280713792,
-      "bki_credit_history_months": -0.3964455424009785,
-      "tax_arrears_flag": -0.8277030739260479,
-      "industry_risk_group": -1.0210486088106738
+      "bki_max_delinquency_days_12m": -0.789343801479,
+      "bki_inquiries_90d": -0.764825943758,
+      "turnover_volatility": -0.525855235362,
+      "confirmed_monthly_revenue": -0.70478469292,
+      "net_margin": -0.449270676607,
+      "business_age_months": -0.472446889514,
+      "revenue_growth": -0.489144597306,
+      "debt_load_ratio": -0.888638928071,
+      "bki_credit_history_months": -0.396445542401,
+      "tax_arrears_flag": -0.827703073926,
+      "industry_risk_group": -1.021048608811
     },
-    "intercept": -2.884415903218102,
+    "intercept": -2.884415903218,
     "metrics": {
       "train": {
         "n": 4771,
