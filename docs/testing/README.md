@@ -8,10 +8,14 @@
 
 | Уровень | Команда | Что доказывает |
 |---|---|---|
-| Бэкенд, pytest против PostgreSQL 17 | `make test` | 14 тестовых функций, 124 случая с параметризацией |
-| Фронтенд, Vitest + RTL + MSW | `make web-test` | typecheck, 11 тестов, production-сборка |
+| Бэкенд, pytest против PostgreSQL 17 | `make test` | 27 тестовых функций, 155 случаев с параметризацией |
+| Фронтенд, Vitest + RTL + MSW | `make web-test` | typecheck, 29 тестов в 11 файлах, production-сборка |
 | Сквозной сценарий через API живого стека | `make e2e` | сценарии S1-S5 и проверка прав на собранном `docker compose` |
 | Воспроизводимость аналитики | `cd analytics && uv run --python 3.12 python -m src.build_all` | конфиги, golden-файл и история пересобираются побитно; сборка падает, если путь правил демо-профиля изменился |
+| Границы аналитических метрик | `cd analytics && uv run --python 3.12 --frozen python -m unittest discover -s tests -v` | 2 теста: одинаковые баллы и перестановки для KS, пустые подгруппы метрик |
+| Переносимость checkout | `python3 scripts/check_checkout.py` | хеши scorecard/policy и LF скриптов; в CI выполняется на Windows с `core.autocrlf=true` |
+
+Изменения D01-D16 и конкретные граничные проверки перечислены в [реестре исправлений](audit-fixes.md).
 
 ### 1.1. Бэкенд (`services/api/tests`)
 
@@ -57,7 +61,7 @@
 
 ## 2. Ручная проверка через интерфейс
 
-Стенд: `docker compose up --build -d`, интерфейс http://localhost:8080. Тестовые учетные записи показаны на странице входа. Пароли: клиенты `Demo-Client-2026`, андеррайтеры `Demo-Uw-2026`, риск-менеджер `Demo-Risk-2026`.
+Стенд: `docker compose up --build -d --wait`, интерфейс http://localhost:8080. Тестовые учетные записи показаны на странице входа. Пароли: клиенты `Demo-Client-2026`, андеррайтеры `Demo-Uw-2026`, риск-менеджер `Demo-Risk-2026`.
 
 | ID | Сценарий | Шаги | Ожидаемый результат | US |
 |---|---|---|---|---|

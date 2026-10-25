@@ -1,6 +1,6 @@
 # Модель данных
 
-PostgreSQL 17, схема создается миграциями Alembic (`services/api/migrations`, первая ревизия `0001`). Словарь полей и правила валидации: [data-requirements.md](../process/data-requirements.md); статусы и служебные поля заявки: [application-states.md](../process/application-states.md), раздел 2; события: [events.md](../process/events.md).
+PostgreSQL 17, схема создается миграциями Alembic: `0001` задает исходную схему, [0002](../../services/api/migrations/versions/0002_durable_integration_requests.py) добавляет `integration_requests` и `loans.payment_schedule`. Ниже схема прототипа, а не подтверждение применения миграций на конкретном стенде. Результаты проверок: [audit-fixes.md](../testing/audit-fixes.md). Словарь полей и правила валидации: [data-requirements.md](../process/data-requirements.md); статусы и служебные поля заявки: [application-states.md](../process/application-states.md), раздел 2; события: [events.md](../process/events.md).
 
 Общие правила:
 
@@ -32,6 +32,7 @@ erDiagram
     info_requests ||--|{ info_request_items : ""
     applications ||--o{ application_field_changes : ""
     applications ||--o{ document_packages : ""
+    applications ||--o{ integration_requests : "application_id"
     document_packages ||--|{ generated_documents : ""
     document_packages ||--o{ signing_codes : ""
     signing_codes ||--o| signatures : ""
@@ -133,7 +134,7 @@ erDiagram
 |---|---|---|
 | `users` | тестовые учетные записи и синтетические клиенты истории | `login` уникален, `password_hash` (argon2id, у исторических клиентов пусто и `is_active = false`), `role` CHECK `CLIENT`, `UNDERWRITER`, `RISK_MANAGER` |
 | `companies` | заявитель (ООО или ИП) по ИНН | `inn` уникален, `applicant_type` |
-| `company_memberships` | кто представляет компанию | уникальная пара пользователь и компания; клиент видит заявки своих компаний |
+| `company_memberships` | кто представляет компанию | уникальная пара пользователь и компания; привязка используется для доступа к компании, доступ к заявке проверяется отдельно по владельцу |
 | `refresh_tokens` | одноразовые refresh-токены | хранится только sha256, `family_id` для отзыва цепочки при повторном использовании |
 | `login_attempts` | ограничение частоты входа | индексы по логину и IP со временем |
 | `idempotency_keys` | результат команды по ключу | уникальная пара пользователь и ключ, хеш запроса, сохраненный ответ; хранится 24 часа |
@@ -146,7 +147,7 @@ erDiagram
 | `applications` | заявка: анкета клиента, сведения реестров, служебные поля стейт-машины, итоговые условия | `status` CHECK, `version >= 1`, частичный уникальный индекс `uq_app_active_inn_product`: одна активная (не черновик и не терминальная) заявка на ИНН и продукт; частичный индекс `ix_app_retry` для таймера повторов; `score` и `grade` денормализованы для списков (источник истины `scoring_results`) |
 | `application_field_changes` | изменения анкеты после отправки (ответы на дозапрос) | поле, старое и новое значение, дозапрос, автор |
 | `consents` | согласия с фиксацией для аудита | тип CHECK, версия и sha256 текста, `granted_at` по времени сервера, `expires_at` (БКИ 6 месяцев), `revoked_at`, IP, user agent |
-| `documents`, `document_contents` | файлы клиента | MIME CHECK (PDF, JPEG, PNG по сигнатуре), размер до 10 МБ, sha256, связь с пунктом дозапроса; содержимое отдельно от метаданных |
+| `documents`, `document_contents` | файлы клиента | MIME CHECK (PDF, JPEG, PNG по сигнатуре), размер до 10 МБ, sha256, связь с пунктом дозапроса; квота до подачи 20 на заявку, при дозапросе 20 на пункт с сохранением старых файлов; содержимое отдельно от метаданных |
 | `info_requests`, `info_request_items` | дозапросы: источник (`COMPLETENESS_CHECK`, `POLICY`, `UNDERWRITER`), срок, пункты с кодом `NI_*`, типом ответа и ответами | статус `OPEN`, `ANSWERED`, `EXPIRED`, `CANCELLED` |
 
 ### 2.3. Внешние данные, скоринг, решение
@@ -163,9 +164,12 @@ erDiagram
 | Таблица | Назначение |
 |---|---|
 | `document_packages`, `generated_documents` | пакет документов от ЭДО: номер договора, операция ЭДО, тексты документов и их sha256 |
+| `integration_requests` | намерение операции ЭДО/АБС, фиксируемое до внешнего вызова: `idempotency_key` (PK), `application_id` (FK), `system`, `request` (JSONB), `response` (JSONB, может отсутствовать), `created_at`; индекс по заявке. Повтор использует сохраненный запрос и результат по тому же ключу |
 | `signing_codes` | одноразовые коды: HMAC кода (сам код не хранится), хеши документов, срок 5 минут, число попыток, использован или аннулирован |
 | `signatures` | факт подписи: код, хеши документов, время, IP, user agent, id подписи в ЭДО; одна на заявку |
-| `loans` | выдача: номер договора, маскированный счет, тип операции (`DISBURSEMENT`, `CREDIT_LINE_LIMIT`), условия, дата первого платежа, `abs_operation_id` (уникален); одна на заявку |
+| `loans` | выдача: номер договора, маскированный счет, тип операции (`DISBURSEMENT`, `CREDIT_LINE_LIMIT`), условия, дата первого платежа, `abs_operation_id` (уникален); одна на заявку. `payment_schedule` (JSONB, nullable) сохраняет график из подписанного пакета, переданный АБС, для последующего чтения без пересчета по текущей дате |
+
+Восстановление результата неизвестного исхода: [reliability.md](reliability.md#1-идемпотентность). Наличие durable-запроса в БД не делает симулятор внешней системы промышленным хранилищем. Для старых записей без `payment_schedule` сохраненный график не появляется автоматически; это отдельная граница данных после миграции.
 
 ### 2.5. Процесс, журналы, уведомления
 
