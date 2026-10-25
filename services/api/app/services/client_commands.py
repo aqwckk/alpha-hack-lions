@@ -95,7 +95,7 @@ def next_application_number(session: Session) -> str:
     return f"A-{n:06d}"
 
 
-# ------------------------------------------------------------------------------ create / draft
+# Create and edit draft
 
 
 def create_application(session: Session, actor: Actor, *, product_code: str, purpose: str, amount: Any, term_months: Any, wizard_session_id: str | None) -> Application:
@@ -292,7 +292,7 @@ def prefill(session: Session, actor: Actor, app: Application, *, expected_versio
     return result
 
 
-# ------------------------------------------------------------------------------ consents and documents
+# Consents and documents
 
 
 def give_consent(session: Session, actor: Actor, app: Application, consent_type: str, *, expected_version: int | None) -> Consent:
@@ -400,7 +400,7 @@ def delete_document(session: Session, actor: Actor, app: Application, document_i
     audit(session, actor, Command.DELETE_DOCUMENT.value, application_id=app.id, object_type="document", object_id=str(doc.id))
 
 
-# ------------------------------------------------------------------------------ submit / respond / withdraw
+# Submit, respond and withdraw
 
 
 def form_snapshot(app: Application) -> dict[str, Any]:
@@ -547,7 +547,7 @@ def withdraw(session: Session, actor: Actor, app: Application, *, expected_versi
     return app
 
 
-# ------------------------------------------------------------------------------ offer and signing
+# Offer and signing
 
 
 def accept_offer(session: Session, actor: Actor, app: Application, *, expected_version: int, option_id: uuid.UUID) -> Application:

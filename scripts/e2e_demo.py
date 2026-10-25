@@ -224,7 +224,7 @@ def common_card_checks(card: Dict[str, Any]) -> None:
     check(len(transitions) >= 5, f"journal has STATUS_CHANGED for each of {len(transitions)} transitions")
 
 
-# ---------------------------------------------------------------------------- scenarios
+# Scenarios
 
 
 def s1(risk: Http) -> None:

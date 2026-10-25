@@ -122,7 +122,7 @@ def msk_today() -> str:
     return datetime.now(MSK).date().isoformat()
 
 
-# ------------------------------------------------------------------------------ COMPLETENESS_CHECK
+# Completeness check
 
 
 def completeness_check(job: dict[str, Any], actor: Actor) -> None:
@@ -166,7 +166,7 @@ def completeness_check(job: dict[str, Any], actor: Actor) -> None:
         emit(session, "MANUAL_REVIEW_QUEUED", actor, application=app, payload={"reason_codes": ["MR_INFO_CYCLES_EXCEEDED"], "review_due_at": app.review_due_at.isoformat()})
 
 
-# ------------------------------------------------------------------------------ ENRICH
+# Enrichment
 
 
 def _applicable_sources(app: Application) -> list[str]:
@@ -282,7 +282,7 @@ def enrich(job: dict[str, Any], actor: Actor) -> None:
         fail_stage(session, app, actor, last_error)
 
 
-# ------------------------------------------------------------------------------ SCORE and DECIDE
+# Scoring and decision
 
 
 class MissingSourceData(Exception):
@@ -426,7 +426,7 @@ def decide(job: dict[str, Any], actor: Actor) -> None:
                 emit(session, "MANUAL_REVIEW_QUEUED", actor, application=app, payload={"reason_codes": reasons, "review_due_at": app.review_due_at.isoformat()})
 
 
-# ------------------------------------------------------------------------------ documents and disbursement
+# Documents and disbursement
 
 
 def _with_retries(fn, attempts: int):

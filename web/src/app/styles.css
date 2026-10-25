@@ -54,7 +54,7 @@ body {
   outline: none;
 }
 
-/* ---------------------------------------------------------------- layout */
+/* Layout */
 .app-header {
   position: sticky;
   top: 0;
@@ -148,7 +148,7 @@ body {
   }
 }
 
-/* ---------------------------------------------------------------- generic blocks */
+/* Generic blocks */
 .section-card {
   background: var(--app-surface);
 }
@@ -218,7 +218,7 @@ body {
   background: var(--app-surface);
 }
 
-/* ---------------------------------------------------------------- progress tracker (8 steps) */
+/* Progress tracker (8 steps) */
 .progress-track {
   list-style: none;
   margin: 0;
@@ -328,7 +328,7 @@ body {
   }
 }
 
-/* ---------------------------------------------------------------- choice cards */
+/* Choice cards */
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));

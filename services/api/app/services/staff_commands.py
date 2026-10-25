@@ -117,7 +117,7 @@ def create_offer(session: Session, app: Application, decision: Decision, options
     return offer
 
 
-# ------------------------------------------------------------------------------ take / release
+# Take and release
 
 
 def take(session: Session, actor: Actor, app: Application, *, expected_version: int) -> Application:
@@ -141,7 +141,7 @@ def release(session: Session, actor: Actor, app: Application, *, expected_versio
     return app
 
 
-# ------------------------------------------------------------------------------ positive decisions
+# Positive decisions
 
 
 def _manual_options(app: Application, grade: str, raw: list[dict[str, Any]], recommendation: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -279,7 +279,7 @@ def return_decision(session: Session, actor: Actor, app: Application, *, expecte
     return app
 
 
-# ------------------------------------------------------------------------------ info request and decline
+# Info request and decline
 
 
 def build_info_items(app: Application, raw_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -379,7 +379,7 @@ def decline(session: Session, actor: Actor, app: Application, *, expected_versio
     return app
 
 
-# ------------------------------------------------------------------------------ technical
+# Technical operations
 
 
 def retry_processing(session: Session, actor: Actor, app: Application, *, expected_version: int) -> Application:

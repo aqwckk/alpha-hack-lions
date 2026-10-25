@@ -42,7 +42,7 @@ const appPath = (id: string) => ({ path: { application_id: id } });
 export type ConsentType = 'CONSENT_PERSONAL_DATA' | 'CONSENT_CREDIT_BUREAU' | 'AUTHORITY_CONFIRMATION';
 
 export const api = {
-  // ---------------------------------------------------------------- session and public
+  // Session and public endpoints
   meta: async (): Promise<MetaInfo> => unwrap(http.GET('/api/v1/meta')).then((d) => documented<MetaInfo>(d)),
   login: (login: string, password: string): Promise<TokenResponse> =>
     unwrap(http.POST('/api/v1/auth/login', { body: { login, password }, credentials: 'include' })),
@@ -66,7 +66,7 @@ export const api = {
     was_recommended?: boolean;
   }): Promise<unknown> => unwrap(http.POST('/api/v1/analytics/events', { body })),
 
-  // ---------------------------------------------------------------- client applications
+  // Client application endpoints
   listApplications: (page = 1, pageSize = 20) => unwrap(http.GET('/api/v1/applications', { params: { query: { page, page_size: pageSize } } })),
   getApplication: (id: string): Promise<ClientApplication> => unwrap(http.GET('/api/v1/applications/{application_id}', { params: appPath(id) })),
   createApplication: (
@@ -158,14 +158,14 @@ export const api = {
       headers: { Accept: '*/*' },
     }),
 
-  // ---------------------------------------------------------------- notifications
+  // Notification endpoints
   notifications: async (): Promise<NotificationsPage> =>
     documented<NotificationsPage>(await unwrap(http.GET('/api/v1/notifications', { params: { query: { page_size: 30 } } }))),
   markRead: (id: string): Promise<unknown> =>
     unwrap(http.POST('/api/v1/notifications/{notification_id}/read', { params: { path: { notification_id: id } } })),
   markAllRead: (): Promise<unknown> => unwrap(http.POST('/api/v1/notifications/read-all')),
 
-  // ---------------------------------------------------------------- bank workplace
+  // Bank workplace endpoints
   bankList: async (query: Record<string, string | number | boolean | undefined>): Promise<StaffPage> =>
     documented<StaffPage>(await unwrap(http.GET('/api/v1/bank/applications', { params: { query: query as never } }))),
   bankCard: async (id: string, viewContext: 'QUEUE' | 'SEARCH' | 'ERROR_LIST'): Promise<StaffCard> =>
@@ -230,7 +230,7 @@ export const api = {
       headers: { Accept: '*/*' },
     }),
 
-  // ---------------------------------------------------------------- risk manager
+  // Risk manager endpoints
   metrics: async (periodDays: number, productCode?: string): Promise<Metrics> =>
     documented<Metrics>(
       await unwrap(http.GET('/api/v1/risk/metrics', { params: { query: { period_days: periodDays, ...(productCode ? { product_code: productCode } : {}) } } })),
@@ -241,7 +241,7 @@ export const api = {
   audit: async (query: Record<string, string | number | boolean | undefined>): Promise<AuditPage> =>
     documented<AuditPage>(await unwrap(http.GET('/api/v1/risk/audit', { params: { query: query as never } }))),
 
-  // ---------------------------------------------------------------- demo controls (DEMO_MODE only)
+  // Demo controls (DEMO_MODE only)
   demoState: async (): Promise<DemoState> => documented<DemoState>(await unwrap(http.GET('/api/v1/demo/integrations'))),
   demoReset: (): Promise<unknown> => unwrap(http.POST('/api/v1/demo/integrations/reset')),
   demoOutage: (source: IntegrationSource, failure: 'TIMEOUT' | 'HTTP_500' | null): Promise<unknown> =>

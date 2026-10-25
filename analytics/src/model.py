@@ -30,7 +30,7 @@ PDO = 20
 GRADE_PD_CUTS = [("A", 0.02), ("B", 0.04), ("C", 0.08), ("D", 0.15)]
 
 
-# ---------------------------------------------------------------- binning
+# Binning
 def _woe_table(bin_idx: pd.Series, y: pd.Series) -> pd.DataFrame:
     t = pd.DataFrame({"b": bin_idx, "y": y}).groupby("b")["y"].agg(["count", "sum"])
     t.columns = ["n", "bad"]
@@ -159,7 +159,7 @@ def woe_transform(df: pd.DataFrame, fac: dict) -> pd.Series:
     return w
 
 
-# ---------------------------------------------------------------- metrics
+# Metrics
 def gini_ks(y, score) -> tuple[float, float, float]:
     risk = -np.asarray(score)
     auc = roc_auc_score(y, risk)
@@ -191,7 +191,7 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return (c - h, c + h)
 
 
-# ---------------------------------------------------------------- pipeline
+# Pipeline
 def develop(pop: pd.DataFrame) -> dict:
     data = pop[~pop["stop_factor"]].copy()
     dev = data[data["cohort"] == "2024H2"].copy()

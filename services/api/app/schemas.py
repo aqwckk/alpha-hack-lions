@@ -19,7 +19,7 @@ class Open(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-# ------------------------------------------------------------------ errors and pages
+# Errors and pages
 
 
 class ErrorField(BaseModel):
@@ -40,7 +40,7 @@ class ErrorResponse(BaseModel):
     error: ErrorBody
 
 
-# ------------------------------------------------------------------ auth
+# Auth
 
 
 class LoginRequest(Strict):
@@ -64,7 +64,7 @@ class TokenResponse(BaseModel):
     user: UserInfo
 
 
-# ------------------------------------------------------------------ catalog
+# Catalog
 
 
 class MatchRequest(Strict):
@@ -128,7 +128,7 @@ class AnalyticsEventRequest(Strict):
     was_recommended: bool | None = None
 
 
-# ------------------------------------------------------------------ client commands
+# Client commands
 
 
 class CreateApplicationRequest(Strict):
@@ -198,7 +198,7 @@ class SignRequest(Strict):
     code: str = Field(min_length=1, max_length=12)
 
 
-# ------------------------------------------------------------------ staff commands
+# Staff commands
 
 
 class CommentCommand(Strict):
@@ -248,7 +248,7 @@ class OutageRequest(Strict):
     failure: Literal["TIMEOUT", "HTTP_500"] | None = None
 
 
-# ------------------------------------------------------------------ client view (strict allowlist)
+# Client view (strict allowlist)
 
 
 class StatusText(Strict):
@@ -551,7 +551,7 @@ class ScheduleResponse(BaseModel):
     rows: list[ScheduleRow]
 
 
-# ------------------------------------------------------------------ staff views (internal data allowed)
+# Staff views (internal data allowed)
 
 
 class StaffListItem(Open):

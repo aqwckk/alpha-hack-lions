@@ -283,7 +283,7 @@ def create_app() -> FastAPI:
             raise MockError(403, "CONSENT_REQUIRED", "A valid consent of the subject is required")
         return await source_response(request, "CREDIT_BUREAU", body.inn)
 
-    # ---- EDO ------------------------------------------------------------------------------
+    # EDO
 
     def idem_key(value: str | None) -> str:
         if not value or len(value) > 128:
@@ -353,7 +353,7 @@ def create_app() -> FastAPI:
             package["status"] = "SIGNED"
             return signature
 
-    # ---- ABS ------------------------------------------------------------------------------
+    # ABS
 
     @app.post("/abs/v1/loans", tags=["ABS"], dependencies=deps, status_code=201)
     async def issue_loan(body: LoanRequest, request: Request, idempotency_key: str | None = Header(default=None)):
@@ -393,7 +393,7 @@ def create_app() -> FastAPI:
             ledger.operations[key] = (fingerprint, op)
             return op
 
-    # ---- demo administration --------------------------------------------------------------
+    # Demo administration
 
     @app.get("/admin/state", tags=["admin"], dependencies=deps)
     def admin_state() -> dict[str, Any]:

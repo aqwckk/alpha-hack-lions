@@ -615,7 +615,7 @@ def client_list_item(session: Session, app: Application) -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------- employee views
+# Employee views
 
 
 def user_names(session: Session, ids: set) -> dict[Any, str]:

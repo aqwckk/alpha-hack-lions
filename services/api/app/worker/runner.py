@@ -56,7 +56,7 @@ class Worker:
         self.stopping = False
         self._last_timer = 0.0
 
-    # ---------------------------------------------------------------- queue
+    # Queue
 
     def claim(self) -> dict[str, Any] | None:
         with session_scope() as session:
@@ -132,7 +132,7 @@ class Worker:
         finally:
             JOB_SECONDS.labels(kind).observe(time.perf_counter() - started)
 
-    # ---------------------------------------------------------------- timers
+    # Timers
 
     def run_timers(self) -> None:
         with session_scope() as session:
@@ -299,7 +299,7 @@ class Worker:
             # stored command results are kept for 24 hours (a retry after that is a new command)
             session.execute(delete(IdempotencyKey).where(IdempotencyKey.created_at < utcnow() - timedelta(hours=24)))
 
-    # ---------------------------------------------------------------- loop
+    # Loop
 
     def tick(self) -> bool:
         s = get_settings()
