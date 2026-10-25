@@ -21,11 +21,15 @@ export function StepReview({
   form,
   flush,
   goTo,
+  innReady,
+  confirmInn,
 }: {
   app: ClientApplication;
   form: UseFormReturn<DraftValues>;
-  flush: () => Promise<void>;
+  flush: () => Promise<boolean>;
   goTo: (step: FormStep) => Promise<void>;
+  innReady: boolean;
+  confirmInn: () => boolean;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -57,7 +61,7 @@ export function StepReview({
 
   const submit = useMutation({
     mutationFn: async (key: string) => {
-      await flush();
+      if (!confirmInn() || !(await flush()) || !confirmInn()) throw new Error('Не удалось сохранить заявку. Проверьте поля и ИНН перед отправкой.');
       const version = currentVersion(queryClient, app.id) ?? app.version;
       return api.submit(app.id, version, key);
     },
@@ -87,11 +91,10 @@ export function StepReview({
   });
 
   const onSubmit = () => {
-    if (submit.isPending) return;
+    if (submit.isPending || !innReady) return;
     // One key per user intent: an automatic network retry reuses it, a new click creates a new one.
     const key = submitKey ?? newId();
     setSubmitKey(key);
-    setFieldErrors([]);
     setDuplicateId(null);
     submit.mutate(key);
   };
@@ -225,7 +228,7 @@ export function StepReview({
       </Alert>
 
       <Group>
-        <Button size="lg" leftSection={<IconSend size={18} aria-hidden />} onClick={onSubmit} loading={submit.isPending} disabled={!app.available_actions.includes('SUBMIT')}>
+        <Button size="lg" leftSection={<IconSend size={18} aria-hidden />} onClick={onSubmit} loading={submit.isPending} disabled={!innReady || !app.available_actions.includes('SUBMIT')}>
           Отправить заявку
         </Button>
       </Group>

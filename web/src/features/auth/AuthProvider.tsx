@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { refreshSession, setSessionHandlers, tokenStore } from '@/shared/api/client';
 import { api } from '@/shared/api/endpoints';
+import { clearSessionDrafts } from '@/shared/lib/sessionDrafts';
 import type { Role, TokenResponse, UserInfo } from '@/shared/api/types';
 
 type AuthState =
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     tokenStore.set(null);
     queryClient.clear();
+    clearSessionDrafts();
     setState({ status: 'anonymous', reason: 'logout' });
   }, [queryClient]);
 

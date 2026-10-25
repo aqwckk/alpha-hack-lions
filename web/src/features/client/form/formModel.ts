@@ -90,7 +90,7 @@ export function snapshot(values: DraftValues): Record<DraftField, PatchValue> {
 /** The step a returning client continues from: the first one with something missing. */
 export function resumeStep(app: ClientApplication): FormStep {
   const f = app.form as Record<string, unknown>;
-  if (app.inn_check_status !== 'FOUND' || !f.representative_role) return 'company';
+  if (!['FOUND', 'UNAVAILABLE'].includes(app.inn_check_status) || !f.representative_role) return 'company';
   if (f.monthly_revenue_declared == null || f.existing_monthly_payments_declared == null) return 'terms';
   if (app.required_documents.some((d) => !d.uploaded)) return 'documents';
   return 'review';

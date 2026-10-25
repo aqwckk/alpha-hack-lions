@@ -67,7 +67,7 @@ export const api = {
   }): Promise<unknown> => unwrap(http.POST('/api/v1/analytics/events', { body })),
 
   // ---------------------------------------------------------------- client applications
-  listApplications: () => unwrap(http.GET('/api/v1/applications', { params: { query: { page: 1, page_size: 100 } } })),
+  listApplications: (page = 1, pageSize = 20) => unwrap(http.GET('/api/v1/applications', { params: { query: { page, page_size: pageSize } } })),
   getApplication: (id: string): Promise<ClientApplication> => unwrap(http.GET('/api/v1/applications/{application_id}', { params: appPath(id) })),
   createApplication: (
     body: { product_code: string; purpose: string; amount: string; term_months: number; wizard_session_id?: string },

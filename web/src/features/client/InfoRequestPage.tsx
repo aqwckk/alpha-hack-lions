@@ -2,6 +2,8 @@ import { Alert, Badge, Button, Group, NumberInput, Paper, Stack, Text, TextInput
 import { IconClockHour4, IconInfoCircle, IconSend } from '@tabler/icons-react';
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useUser } from '@/features/auth/AuthProvider';
+import { readSessionDraft, writeSessionDraft, removeSessionDraft } from '@/shared/lib/sessionDrafts';
 import { DocumentList, DocumentUpload } from './DocumentUpload';
 import { useClientCommand } from '@/shared/api/commands';
 import { api } from '@/shared/api/endpoints';
@@ -14,12 +16,13 @@ const MONEY_FIELDS = new Set(['monthly_revenue_declared', 'existing_monthly_paym
 
 export function InfoRequestPage() {
   const { id = '' } = useParams();
+  const user = useUser();
   const query = useClientApplication(id);
   if (query.isPending) return <PageSkeleton lines={3} />;
   if (query.isError) return <ErrorState error={query.error} onRetry={() => void query.refetch()} notFoundText="Заявка не найдена или у вас нет к ней доступа" />;
   const app = query.data;
   if (app.client_status !== 'ACTION_REQUIRED' || !app.info_request) return <Navigate to={`/client/applications/${app.id}`} replace />;
-  return <InfoRequestForm app={app} />;
+  return <InfoRequestForm key={`${user.id}:${app.id}:${app.info_request.id}`} app={app} userId={user.id} />;
 }
 
 type Answers = Record<string, { text: string; value: string | number | '' }>;
@@ -36,11 +39,25 @@ function initialAnswers(items: InfoItemView[]): Answers {
   return out;
 }
 
-function InfoRequestForm({ app }: { app: ClientApplication }) {
+function InfoRequestForm({ app, userId }: { app: ClientApplication; userId: string }) {
   const navigate = useNavigate();
   const request = app.info_request;
   const items = request?.items ?? [];
-  const [answers, setAnswers] = useState<Answers>(() => initialAnswers(items));
+  const storageKey = `info:${userId}:${app.id}:${request?.id}`;
+  const [answers, setAnswers] = useState<Answers>(() => {
+    const defaults = initialAnswers(items);
+    const stored = readSessionDraft(storageKey);
+    if (stored && typeof stored === 'object') {
+      for (const item of items) {
+        const answer = (stored as Record<string, unknown>)[item.id];
+        if (answer && typeof answer === 'object' && 'text' in answer && typeof answer.text === 'string' && 'value' in answer && (typeof answer.value === 'string' || typeof answer.value === 'number')) {
+          defaults[item.id] = { text: answer.text, value: answer.value };
+        }
+      }
+    }
+    return defaults;
+  });
+  const [storageError, setStorageError] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const docsFor = (item: InfoItemView) => app.documents.filter((d) => d.info_request_item_id === item.id);
@@ -50,16 +67,20 @@ function InfoRequestForm({ app }: { app: ClientApplication }) {
     if (item.answer_type === 'FIELD') return a !== undefined && a.value !== '' && a.value !== null;
     return Boolean(a?.text.trim());
   };
+  const tooLong = items.some((it) => it.answer_type === 'TEXT' && (answers[it.id]?.text.length ?? 0) > 2000);
   const missing = items.filter((it) => it.required && !isAnswered(it));
 
   const respond = useClientCommand<{ answers: InfoAnswer[] }>(app.id, ({ version, key, answers: list }) => api.respondInfo(app.id, version, list, key), {
     success: 'Ответ отправлен. Рассмотрение продолжится автоматически.',
-    onSuccess: (res) => navigate(`/client/applications/${res.id}`),
+    onSuccess: (res) => {
+      removeSessionDraft(storageKey);
+      navigate(`/client/applications/${res.id}`);
+    },
   });
 
   const onSubmit = () => {
     setTouched(true);
-    if (missing.length > 0) return;
+    if (missing.length > 0 || tooLong) return;
     const list: InfoAnswer[] = items.map((it) => {
       const a = answers[it.id];
       if (it.answer_type === 'DOCUMENT') return { item_id: it.id, document_ids: docsFor(it).map((d) => d.id) };
@@ -70,7 +91,11 @@ function InfoRequestForm({ app }: { app: ClientApplication }) {
   };
 
   const set = (itemId: string, patch: Partial<{ text: string; value: string | number | '' }>) =>
-    setAnswers((prev) => ({ ...prev, [itemId]: { text: prev[itemId]?.text ?? '', value: prev[itemId]?.value ?? '', ...patch } }));
+    setAnswers((prev) => {
+      const next = { ...prev, [itemId]: { text: prev[itemId]?.text ?? '', value: prev[itemId]?.value ?? '', ...patch } };
+      setStorageError(!writeSessionDraft(storageKey, next));
+      return next;
+    });
 
   return (
     <>
@@ -86,6 +111,7 @@ function InfoRequestForm({ app }: { app: ClientApplication }) {
             После отправки рассмотрение продолжится автоматически. Если вопрос непонятен, опишите это в ответе, специалист увидит ваш комментарий.
           </Text>
         </Alert>
+        {storageError && <Alert color="orange">Браузер не разрешил сохранить незаконченный ответ. Оставьте страницу открытой до отправки.</Alert>}
         {items.map((item, idx) => {
           const a = answers[item.id];
           const showError = touched && item.required && !isAnswered(item);
@@ -108,16 +134,19 @@ function InfoRequestForm({ app }: { app: ClientApplication }) {
                     label="Ваш ответ"
                     autosize
                     minRows={3}
-                    maxLength={4000}
+                    maxLength={2000}
+                    description={`${a?.text.length ?? 0} / 2000 символов`}
+                    disabled={respond.isPending}
                     value={a?.text ?? ''}
                     onChange={(e) => set(item.id, { text: e.currentTarget.value })}
-                    error={showError ? 'Ответьте на этот вопрос' : undefined}
+                    error={(a?.text.length ?? 0) > 2000 ? 'Не более 2000 символов' : showError ? 'Ответьте на этот вопрос' : undefined}
                   />
                 )}
                 {item.answer_type === 'FIELD' &&
                   (item.field_name && MONEY_FIELDS.has(item.field_name) ? (
                     <NumberInput
                       label={item.field_label ?? 'Значение'}
+                      disabled={respond.isPending}
                       description={item.current_value ? 'Сейчас в заявке указано значение ниже. Исправьте его или подтвердите' : undefined}
                       value={typeof a?.value === 'number' ? a.value : a?.value === '' ? '' : Number(a?.value ?? '')}
                       onChange={(v) => set(item.id, { value: typeof v === 'number' ? v : '' })}
@@ -132,6 +161,7 @@ function InfoRequestForm({ app }: { app: ClientApplication }) {
                   ) : (
                     <TextInput
                       label={item.field_label ?? 'Значение'}
+                      disabled={respond.isPending}
                       value={String(a?.value ?? '')}
                       onChange={(e) => set(item.id, { value: e.currentTarget.value })}
                       maw={420}

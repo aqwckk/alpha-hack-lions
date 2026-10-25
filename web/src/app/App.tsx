@@ -2,7 +2,7 @@ import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, useState, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Route, RouterProvider, Routes } from 'react-router-dom';
 import { NotFoundPage } from './NotFoundPage';
 import { createQueryClient } from './queryClient';
 import { theme } from './theme';
@@ -72,17 +72,15 @@ export function AppRoutes() {
   );
 }
 
+const router = createBrowserRouter([{ path: '*', element: <AuthProvider><AppRoutes /></AuthProvider> }]);
+
 export function App() {
   const [queryClient] = useState(createQueryClient);
   return (
     <MantineProvider theme={theme} forceColorScheme="light">
       <Notifications position="top-right" zIndex={1000} limit={4} />
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </QueryClientProvider>
     </MantineProvider>
   );

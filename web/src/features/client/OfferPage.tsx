@@ -208,6 +208,8 @@ function OfferView({ app, offer }: { app: ClientApplication; offer: OfferView })
           <Title order={2} size="h4" mb="sm">
             {offer.options.length > 1 ? 'Варианты банка: выберите подходящий' : 'Условия банка'}
           </Title>
+          {offer.options.some((option) => option.recommended) && <Text size="sm" mb="sm">Рекомендация учитывает скорость и простоту оформления. Минимальная стоимость не гарантируется, сравните переплату и требования.</Text>}
+          {offer.options.filter((option) => option.product_code !== 'CREDIT_LINE').length > 1 && <Text size="sm" mb="sm">Переплата по вариантам: {offer.options.filter((option) => option.product_code !== 'CREDIT_LINE').map((option) => `${optionTitle(option)}: ${formatMoney(option.overpayment)}`).join('; ')}.</Text>}
           <SimpleGrid cols={{ base: 1, sm: offer.options.length > 1 ? 2 : 1, lg: Math.min(offer.options.length, 3) }} spacing="md">
             {offer.options.map((o) => (
               <OfferOptionCard

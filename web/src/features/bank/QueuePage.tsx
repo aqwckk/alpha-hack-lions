@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUser } from '@/features/auth/AuthProvider';
 import { reactToCommandError } from '@/shared/api/commands';
+import { moscowDateBoundary } from '@/shared/lib/dateFilters';
 import { api } from '@/shared/api/endpoints';
 import { qk } from '@/shared/api/queries';
 import type { StaffListItem } from '@/shared/api/types';
@@ -49,7 +50,7 @@ export function QueuePage({ defaultTab }: { defaultTab?: Tab }) {
     if (v) filters[k] = v;
   }
   const [showFilters, setShowFilters] = useState(Object.keys(filters).length > 0 || tab === 'all');
-  const queryParams = { tab, page, page_size: 20, ...filters };
+  const queryParams = { tab, page, page_size: 20, ...filters, created_from: moscowDateBoundary(filters.created_from), created_to: moscowDateBoundary(filters.created_to, true) };
   const query = useQuery({ queryKey: qk.bankList(queryParams), queryFn: () => api.bankList(queryParams), refetchInterval: 15000, placeholderData: (prev) => prev });
 
   const update = (patch: Record<string, string | null>) => {
@@ -149,8 +150,8 @@ function Filters({ filters, onApply, showStatus }: { filters: Record<string, str
         )}
         <Select label="Исход решения" clearable data={['APPROVED', 'COUNTER_OFFER', 'DECLINED'].map((v) => ({ value: v, label: OUTCOME_LABELS[v] ?? v }))} value={draft.outcome || null} onChange={(v) => set('outcome', v)} />
         <Select label="Режим решения" clearable data={[{ value: 'AUTO', label: 'Автоматически' }, { value: 'MANUAL', label: 'Специалистом' }]} value={draft.mode || null} onChange={(v) => set('mode', v)} />
-        <TextInput label="Создана с" type="date" value={draft.created_from ?? ''} onChange={(e) => set('created_from', e.currentTarget.value)} />
-        <TextInput label="Создана по" type="date" value={draft.created_to ?? ''} onChange={(e) => set('created_to', e.currentTarget.value)} />
+        <TextInput label="Создана с (МСК)" type="date" value={draft.created_from ?? ''} onChange={(e) => set('created_from', e.currentTarget.value)} />
+        <TextInput label="Создана по (МСК, включительно)" type="date" value={draft.created_to ?? ''} onChange={(e) => set('created_to', e.currentTarget.value)} />
       </SimpleGrid>
       <Group mt="md" gap="sm">
         <Button type="submit" leftSection={<IconSearch size={16} aria-hidden />}>

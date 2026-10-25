@@ -277,7 +277,7 @@ export interface paths {
         put?: never;
         /**
          * Upload Document
-         * @description UPLOAD_DOCUMENT: PDF, JPG or PNG (checked by file signature), up to 10 MB, up to 20 files.
+         * @description UPLOAD_DOCUMENT: PDF, JPG or PNG by signature, up to 10 MB; 20 draft files and a separate quota of 20 per information-request item.
          */
         post: operations["upload_document_api_v1_applications__application_id__documents_post"];
         delete?: never;
@@ -3719,7 +3719,9 @@ export interface operations {
                 mode?: ("AUTO" | "MANUAL") | null;
                 number?: string | null;
                 inn?: string | null;
+                /** @description Inclusive timestamp with timezone; calendar dates are converted by the UI from Europe/Moscow */
                 created_from?: string | null;
+                /** @description Exclusive timestamp with timezone; the UI sends the start of the following day for an inclusive end date */
                 created_to?: string | null;
                 include_history?: boolean;
                 page?: number;
@@ -4711,7 +4713,9 @@ export interface operations {
         parameters: {
             query?: {
                 period_days?: number | null;
+                /** @description Inclusive timestamp with timezone */
                 from?: string | null;
+                /** @description Exclusive timestamp with timezone */
                 to?: string | null;
                 product_code?: string | null;
             };
@@ -4806,7 +4810,9 @@ export interface operations {
                 application_id?: string | null;
                 /** @description Only card views and document downloads */
                 access_only?: boolean;
+                /** @description Inclusive timestamp with timezone; UI calendar dates use Europe/Moscow */
                 from?: string | null;
+                /** @description Exclusive timestamp with timezone; for an inclusive UI date use the start of the following day */
                 to?: string | null;
                 page?: number;
                 page_size?: number;

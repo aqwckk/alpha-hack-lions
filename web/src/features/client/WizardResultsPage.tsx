@@ -1,19 +1,19 @@
 import { Alert, Badge, Button, Divider, Group, List, NumberInput, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconBulb, IconCalendarTime, IconCheck, IconInfoCircle } from '@tabler/icons-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useUser } from '@/features/auth/AuthProvider';
+import { useCreateDraft } from './useCreateDraft';
 import type { WizardState } from './WizardPage';
 import { api } from '@/shared/api/endpoints';
-import { storeApplication, useDictionaries } from '@/shared/api/queries';
+import { useDictionaries } from '@/shared/api/queries';
 import type { ProductCard } from '@/shared/api/types';
 import { formatDate, formatMoney, formatRate, formatTerm } from '@/shared/lib/format';
-import { newId } from '@/shared/lib/ids';
 import { checkInn } from '@/shared/lib/inn';
 import { EmptyState, ErrorState, PageHeader, PageSkeleton } from '@/shared/ui/components';
 import { Term } from '@/shared/ui/Term';
-import { toast } from '@/shared/ui/toast';
 
 export function WizardResultsPage() {
   const location = useLocation();
@@ -26,6 +26,8 @@ function Results({ state }: { state: WizardState }) {
   const { request } = state;
   const navigate = useNavigate();
   const dictionaries = useDictionaries();
+  const user = useUser();
+  const creation = useCreateDraft(user.id);
   const purposeTitle = dictionaries.data?.purposes.find((p) => p.code === request.purpose)?.title ?? request.purpose;
   const inn = request.inn && checkInn(request.inn).ok ? request.inn : undefined;
   const match = useQuery({
@@ -56,6 +58,12 @@ function Results({ state }: { state: WizardState }) {
         }
       />
       <Stack gap="md">
+        {creation.pending && (
+          <Alert color="orange" radius="lg" title="Проверяем создание заявки">
+            <Text size="sm">Исход предыдущего запроса еще не подтвержден. Повторите его с прежними условиями: {formatMoney(creation.pending.body.amount)}, {formatTerm(creation.pending.body.term_months)}.</Text>
+            <Button mt="sm" variant="light" onClick={() => creation.start()} loading={creation.isPending}>Повторить создание заявки</Button>
+          </Alert>
+        )}
         {match.isPending && <PageSkeleton lines={2} />}
         {match.isError && <ErrorState error={match.error} onRetry={() => void match.refetch()} />}
         {match.data && (
@@ -65,6 +73,12 @@ function Results({ state }: { state: WizardState }) {
                 {hint}
               </Alert>
             ))}
+            {match.data.cards.some((card) => card.recommended) && (
+              <Text size="sm">Рекомендация учитывает скорость решения и простоту оформления. Она не означает минимальную стоимость кредита. Сравните переплату и требования по вариантам.</Text>
+            )}
+            {match.data.cards.length > 1 && (
+              <Text size="sm">Предварительная переплата по вариантам: {match.data.cards.map((card) => `${card.name}: ${formatMoney(card.overpayment_from)} (${formatMoney(clamp(request.amount, Number(card.amount_min), Number(card.amount_max)))}, ${formatTerm(card.term_months)})`).join('; ')}. При изменении суммы и срока смотрите расчет в карточке.</Text>
+            )}
             {match.data.cards.length === 0 ? (
               <EmptyState
                 title="Подходящих вариантов нет"
@@ -74,7 +88,7 @@ function Results({ state }: { state: WizardState }) {
             ) : (
               <SimpleGrid cols={{ base: 1, md: match.data.cards.length > 1 ? 2 : 1 }} spacing="md">
                 {match.data.cards.map((card) => (
-                  <ProductResult key={card.product_code} card={card} state={state} />
+                  <ProductResult key={card.product_code} card={card} state={state} creation={creation} />
                 ))}
               </SimpleGrid>
             )}
@@ -92,17 +106,18 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-function ProductResult({ card, state }: { card: ProductCard; state: WizardState }) {
+function ProductResult({ card, state, creation }: { card: ProductCard; state: WizardState; creation: ReturnType<typeof useCreateDraft> }) {
   const { request } = state;
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const amountMin = Number(card.amount_min);
   const amountMax = Number(card.amount_max);
   const [amount, setAmount] = useState<number>(clamp(request.amount, amountMin, amountMax));
   const [term, setTerm] = useState<number>(card.term_months);
   const [debounced] = useDebouncedValue({ amount, term }, 300);
-  const validAmount = debounced.amount >= amountMin && debounced.amount <= amountMax;
-  const validTerm = debounced.term >= card.term_min_months && debounced.term <= card.term_max_months;
+  const amountStep = Number(card.amount_step);
+  const amountOk = (value: number) => Number.isSafeInteger(value) && value > 0 && value >= amountMin && value <= amountMax && amountStep > 0 && value % amountStep === 0;
+  const termOk = (value: number) => Number.isInteger(value) && value >= card.term_min_months && value <= card.term_max_months;
+  const validAmount = amountOk(debounced.amount);
+  const validTerm = termOk(debounced.term);
   const changed = debounced.amount !== clamp(request.amount, amountMin, amountMax) || debounced.term !== card.term_months;
 
   const calc = useQuery({
@@ -114,41 +129,13 @@ function ProductResult({ card, state }: { card: ProductCard; state: WizardState 
   const payment = changed && calc.data ? calc.data.monthly_payment : card.monthly_payment_from;
   const overpayment = changed && calc.data ? calc.data.overpayment : card.overpayment_from;
 
-  const apply = useMutation({
-    mutationFn: async () => {
-      const key = newId();
-      void api
-        .trackWizard({
-          event_type: 'PRODUCT_SELECTED',
-          wizard_session_id: state.wizardId,
-          product_code: card.product_code,
-          purpose: request.purpose,
-          amount: String(amount),
-          term_months: term,
-          rank: card.rank,
-          was_recommended: card.recommended,
-        })
-        .catch(() => undefined);
-      let app = await api.createApplication(
-        { product_code: card.product_code, purpose: request.purpose, amount: String(amount), term_months: term, wizard_session_id: state.wizardId },
-        key,
-      );
-      const inn = request.inn && checkInn(request.inn).ok ? request.inn : null;
-      if (inn) {
-        try {
-          app = (await api.prefill(app.id, inn, app.version)).application;
-        } catch {
-          // prefill is repeated on the company step; the draft is already saved
-        }
-      }
-      return app;
-    },
-    onSuccess: (app) => {
-      storeApplication(queryClient, app);
-      navigate(`/client/applications/${app.id}/edit/company`);
-    },
-    onError: (e) => toast.error(e, 'Не удалось создать заявку'),
-  });
+  const apply = () => {
+    if (creation.pending || creation.isPending || !amountOk(amount) || !termOk(term)) return;
+    const inn = request.inn && checkInn(request.inn).ok ? request.inn : null;
+    if (creation.start({ product_code: card.product_code, purpose: request.purpose, amount: String(amount), term_months: term, wizard_session_id: state.wizardId }, inn)) {
+      void api.trackWizard({ event_type: 'PRODUCT_SELECTED', wizard_session_id: state.wizardId, product_code: card.product_code, purpose: request.purpose, amount: String(amount), term_months: term, rank: card.rank, was_recommended: card.recommended }).catch(() => undefined);
+    }
+  };
 
   return (
     <Paper withBorder radius="lg" p="lg" className="option-card" data-recommended={card.recommended} data-disabled={!card.available}>
@@ -208,7 +195,7 @@ function ProductResult({ card, state }: { card: ProductCard; state: WizardState 
           allowDecimal={false}
           allowNegative={false}
           step={Number(card.amount_step)}
-          error={amount < amountMin || amount > amountMax ? 'Вне границ продукта' : undefined}
+          error={!amountOk(amount) ? `Укажите сумму от ${formatMoney(amountMin)} до ${formatMoney(amountMax)}, кратную ${formatMoney(amountStep)}` : undefined}
         />
         <NumberInput
           label="Срок, месяцев"
@@ -252,9 +239,9 @@ function ProductResult({ card, state }: { card: ProductCard; state: WizardState 
         <Button
           size="md"
           variant={card.available ? 'filled' : 'default'}
-          onClick={() => apply.mutate()}
-          loading={apply.isPending}
-          disabled={amount < amountMin || amount > amountMax || term < card.term_min_months || term > card.term_max_months}
+          onClick={apply}
+          loading={creation.isPending && creation.pending?.body.product_code === card.product_code}
+          disabled={Boolean(creation.pending) || !amountOk(amount) || !termOk(term)}
         >
           {card.available ? 'Оформить' : 'Все равно оформить'}
         </Button>

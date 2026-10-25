@@ -281,8 +281,9 @@ export function StepTerms({ app, form }: { app: ClientApplication; form: UseForm
           description="Необязательно. Например, сезонность продаж или крупный новый контракт"
           autosize
           minRows={2}
-          maxLength={2000}
-          {...form.register('client_comment')}
+          maxLength={1000}
+          {...form.register('client_comment', { maxLength: { value: 1000, message: 'Не более 1000 символов' } })}
+          error={form.formState.errors.client_comment?.message}
         />
       </SectionCard>
     </Stack>

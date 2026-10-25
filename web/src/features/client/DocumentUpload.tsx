@@ -6,7 +6,7 @@ import { withFreshVersion } from '@/shared/api/commands';
 import { api, openProtectedFile } from '@/shared/api/endpoints';
 import { errorMessage } from '@/shared/api/errors';
 import { storeApplication } from '@/shared/api/queries';
-import type { ClientApplication, DocumentInfo } from '@/shared/api/types';
+import type { DocumentInfo } from '@/shared/api/types';
 import { formatFileSize } from '@/shared/lib/format';
 import { toast } from '@/shared/ui/toast';
 
@@ -25,13 +25,11 @@ export function DocumentUpload({
   documentType,
   infoRequestItemId,
   label = 'Загрузить файл',
-  onUploaded,
 }: {
   appId: string;
   documentType: string;
   infoRequestItemId?: string;
   label?: string;
-  onUploaded?: (app: ClientApplication) => void;
 }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +41,6 @@ export function DocumentUpload({
     onSuccess: (app) => {
       setError(null);
       storeApplication(queryClient, app);
-      onUploaded?.(app);
       toast.success('Файл загружен');
     },
     onError: (e) => setError(errorMessage(e) || 'Не удалось загрузить файл, попробуйте еще раз'),

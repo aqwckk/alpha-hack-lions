@@ -1,7 +1,8 @@
-import { Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, Pagination, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { IconPlus, IconReportMoney } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { DemoHint } from '@/features/demo/DemoHint';
 import { api } from '@/shared/api/endpoints';
 import { qk } from '@/shared/api/queries';
@@ -27,7 +28,26 @@ export function nextActionFor(item: Pick<ClientApplicationListItem, 'id' | 'clie
 }
 
 export function ApplicationsListPage() {
-  const query = useQuery({ queryKey: qk.applications, queryFn: api.listApplications, refetchInterval: 15000 });
+  const [params, setParams] = useSearchParams();
+  const rawPage = Number(params.get('page'));
+  const page = Number.isSafeInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const query = useQuery({ queryKey: [...qk.applications, { page, pageSize: 20 }], queryFn: () => api.listApplications(page, 20), refetchInterval: 15000 });
+  const changePage = (nextPage: number) => {
+    const next = new URLSearchParams(params);
+    if (nextPage === 1) next.delete('page');
+    else next.set('page', String(nextPage));
+    setParams(next);
+  };
+  useEffect(() => {
+    if (!query.data) return;
+    const lastPage = Math.max(1, Math.ceil(query.data.total / query.data.page_size));
+    if (page > lastPage) {
+      const next = new URLSearchParams(params);
+      if (lastPage === 1) next.delete('page');
+      else next.set('page', String(lastPage));
+      setParams(next, { replace: true });
+    }
+  }, [query.data, page, params, setParams]);
 
   return (
     <>
@@ -44,7 +64,7 @@ export function ApplicationsListPage() {
         <DemoHint />
         {query.isPending && <PageSkeleton lines={3} />}
         {query.isError && <ErrorState error={query.error} onRetry={() => void query.refetch()} />}
-        {query.data && query.data.items.length === 0 && (
+        {query.data && query.data.total === 0 && (
           <EmptyState
             icon={<IconReportMoney size={44} color="var(--app-accent)" aria-hidden />}
             title="У вас пока нет заявок"
@@ -118,6 +138,12 @@ export function ApplicationsListPage() {
               );
             })}
           </SimpleGrid>
+        )}
+        {query.data && query.data.total > 0 && (
+          <Group justify="space-between" wrap="wrap">
+            <Text size="sm" c="dimmed">Всего заявок: {query.data.total}</Text>
+            {query.data.total > query.data.page_size && <Pagination total={Math.ceil(query.data.total / query.data.page_size)} value={page} onChange={changePage} aria-label="Страницы заявок" />}
+          </Group>
         )}
       </Stack>
     </>

@@ -1,56 +1,21 @@
-import { Alert, Badge, Group, Paper, Select, Skeleton, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Badge, Button, Group, Paper, Select, Skeleton, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconAlertTriangle, IconBuildingBank, IconCloudOff } from '@tabler/icons-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 import type { DraftValues } from './formModel';
-import { withFreshVersion } from '@/shared/api/commands';
-import { api } from '@/shared/api/endpoints';
-import { storeApplication, useDictionaries } from '@/shared/api/queries';
-import type { ClientApplication, CompanyInfo, PrefillResponse } from '@/shared/api/types';
+import { useDictionaries } from '@/shared/api/queries';
+import type { ClientApplication, CompanyInfo } from '@/shared/api/types';
 import { formatDate, formatDateTime } from '@/shared/lib/format';
 import { GLOSSARY } from '@/shared/lib/glossary';
-import { checkInn, INN_MESSAGES } from '@/shared/lib/inn';
 import { APPLICANT_TYPES, COMPANY_STATUSES, SME_CATEGORIES, TAX_REGIMES } from '@/shared/lib/labels';
 import { KeyValue, SectionCard } from '@/shared/ui/components';
 import { Hint, Term } from '@/shared/ui/Term';
-import { toast } from '@/shared/ui/toast';
+import type { InnConfirmation } from './useInnConfirmation';
 
-export function StepCompany({ app, form }: { app: ClientApplication; form: UseFormReturn<DraftValues> }) {
+export function StepCompany({ app, form, inn }: { app: ClientApplication; form: UseFormReturn<DraftValues>; inn: InnConfirmation }) {
   const dictionaries = useDictionaries();
-  const queryClient = useQueryClient();
-  const serverInn = typeof app.form.applicant_inn === 'string' ? app.form.applicant_inn : '';
-  const [inn, setInn] = useState(serverInn);
-  const [result, setResult] = useState<PrefillResponse['prefill'] | null>(null);
-  const lastRequested = useRef<string>(app.inn_check_status === 'NOT_CHECKED' ? '' : serverInn);
-
-  const check = inn.length === 10 || inn.length === 12 ? checkInn(inn) : null;
-  const localError = inn.length > 0 && inn.length !== 10 && inn.length !== 12 && inn.length >= 10 ? INN_MESSAGES.INN_LENGTH : check && !check.ok ? INN_MESSAGES[check.code] : null;
-
-  const prefill = useMutation({
-    mutationFn: (value: string) => withFreshVersion(queryClient, app.id, (version) => api.prefill(app.id, value, version)),
-    onSuccess: (res) => {
-      storeApplication(queryClient, res.application);
-      setResult(res.prefill);
-    },
-    onError: (e) => toast.error(e, 'Не удалось проверить ИНН'),
-  });
-
-  // INN is checked locally (length and checksum) before any registry request (US-05).
-  useEffect(() => {
-    if (!check?.ok || inn === lastRequested.current) return;
-    const t = setTimeout(() => {
-      lastRequested.current = inn;
-      prefill.mutate(inn);
-    }, 300);
-    return () => clearTimeout(t);
-    // prefill.mutate is stable; the effect reacts to the typed value only
-  }, [inn, check?.ok]);
-
-  const notFound = (result?.status ?? (app.inn_check_status === 'NOT_FOUND' ? 'NOT_FOUND' : null)) === 'NOT_FOUND';
-  const unavailable = (result?.status ?? (app.inn_check_status === 'UNAVAILABLE' ? 'SOURCE_UNAVAILABLE' : null)) === 'SOURCE_UNAVAILABLE';
+  const savedInn = typeof app.form.applicant_inn === 'string' ? app.form.applicant_inn : '';
+  const unavailable = inn.ready && app.inn_check_status === 'UNAVAILABLE';
   const company = app.company as CompanyInfo | null;
-  const serverError = notFound ? (result?.message ?? 'Компания или ИП с таким ИНН не найдены в госреестре. Проверьте ИНН') : null;
 
   return (
     <Stack gap="lg">
@@ -59,17 +24,26 @@ export function StepCompany({ app, form }: { app: ClientApplication; form: UseFo
           <TextInput
             label="ИНН компании или ИП"
             description="10 цифр у компании, 12 у ИП. Сведения о компании подставятся сами"
-            value={inn}
-            onChange={(e) => setInn(e.currentTarget.value.replace(/\D/g, '').slice(0, 12))}
+            value={inn.value}
+            onChange={(e) => inn.change(e.currentTarget.value)}
             inputMode="numeric"
             autoComplete="off"
             maw={360}
             size="md"
-            error={localError ?? serverError}
-            rightSection={prefill.isPending ? <Skeleton circle height={16} /> : <Hint term="ИНН" hint={GLOSSARY.inn} />}
+            error={inn.error}
+            rightSection={inn.isPending ? <Skeleton circle height={16} /> : <Hint term="ИНН" hint={GLOSSARY.inn} />}
             rightSectionPointerEvents="all"
             id="field-applicant_inn"
           />
+          {savedInn && (
+            <Text size="sm" c={inn.value !== savedInn ? 'orange.8' : 'dimmed'}>
+              В заявке сохранен ИНН: <span className="num">{savedInn}</span>.
+              {inn.value !== savedInn && (inn.value ? ' Измененный ИНН еще не сохранен и не проверен.' : ' Поле очищено. Укажите ИНН и дождитесь сохранения и проверки, чтобы продолжить.')}
+            </Text>
+          )}
+          <Button variant="subtle" size="compact-sm" onClick={inn.retry} disabled={!inn.canRetry} loading={inn.isPending} style={{ alignSelf: 'flex-start' }}>
+            Проверить ИНН повторно
+          </Button>
           <Controller
             control={form.control}
             name="representative_role"
@@ -92,7 +66,7 @@ export function StepCompany({ app, form }: { app: ClientApplication; form: UseFo
         </Stack>
       </SectionCard>
 
-      {prefill.isPending && (
+      {inn.isPending && (
         <Paper withBorder radius="lg" p="lg" aria-busy="true">
           <Text size="sm" mb="sm" role="status">
             Получаем сведения из госреестров...
@@ -105,7 +79,7 @@ export function StepCompany({ app, form }: { app: ClientApplication; form: UseFo
         </Paper>
       )}
 
-      {!prefill.isPending && unavailable && (
+      {!inn.isPending && unavailable && (
         <Alert color="gray" icon={<IconCloudOff aria-hidden />} radius="lg">
           Не удалось получить сведения, попробуем при обработке заявки. Можно продолжать.
         </Alert>
@@ -125,7 +99,7 @@ export function StepCompany({ app, form }: { app: ClientApplication; form: UseFo
         </Alert>
       ))}
 
-      {!prefill.isPending && company && app.inn_check_status === 'FOUND' && <CompanyBlock company={company} />}
+      {inn.ready && company && app.inn_check_status === 'FOUND' && <CompanyBlock company={company} />}
     </Stack>
   );
 }

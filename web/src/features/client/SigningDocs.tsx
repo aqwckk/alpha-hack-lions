@@ -14,7 +14,7 @@ function DocumentText({ appId, docId }: { appId: string; docId: string }) {
 }
 
 /** Signing package documents with a reader (text from the EDO simulator). */
-export function SigningDocs({ appId, signing, onOpened }: { appId: string; signing: SigningView; onOpened?: (docId: string) => void }) {
+export function SigningDocs({ appId, signing }: { appId: string; signing: SigningView }) {
   const [openDoc, setOpenDoc] = useState<{ id: string; title: string } | null>(null);
   return (
     <>
@@ -32,7 +32,6 @@ export function SigningDocs({ appId, signing, onOpened }: { appId: string; signi
               size="xs"
               onClick={() => {
                 setOpenDoc({ id: d.id, title: d.title });
-                onOpened?.(d.id);
               }}
               aria-label={`Открыть: ${d.title}`}
             >

@@ -3,6 +3,7 @@ import { IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { moscowDateBoundary } from '@/shared/lib/dateFilters';
 import { api } from '@/shared/api/endpoints';
 import { qk } from '@/shared/api/queries';
 import { formatStamp } from '@/shared/lib/format';
@@ -21,7 +22,7 @@ export function AuditPage() {
     if (v) filters[k] = v;
   }
   const [draft, setDraft] = useState<Record<string, string>>(filters);
-  const queryParams = { page, page_size: 50, ...(accessOnly ? { access_only: true } : {}), ...filters };
+  const queryParams = { page, page_size: 50, ...(accessOnly ? { access_only: true } : {}), ...filters, from: moscowDateBoundary(filters.from), to: moscowDateBoundary(filters.to, true) };
   const query = useQuery({ queryKey: qk.audit(queryParams), queryFn: () => api.audit(queryParams), placeholderData: (prev) => prev });
 
   const apply = (e?: FormEvent) => {
@@ -48,8 +49,8 @@ export function AuditPage() {
             <TextInput label="Действие" placeholder="VIEW_APPLICATION" value={draft.action ?? ''} onChange={(e) => setDraft({ ...draft, action: e.currentTarget.value })} />
             <TextInput label="Пользователь" placeholder="uw.dmitry" value={draft.actor_login ?? ''} onChange={(e) => setDraft({ ...draft, actor_login: e.currentTarget.value })} />
             <TextInput label="ID заявки" value={draft.application_id ?? ''} onChange={(e) => setDraft({ ...draft, application_id: e.currentTarget.value })} />
-            <TextInput label="С" type="date" value={draft.from ?? ''} onChange={(e) => setDraft({ ...draft, from: e.currentTarget.value })} />
-            <TextInput label="По" type="date" value={draft.to ?? ''} onChange={(e) => setDraft({ ...draft, to: e.currentTarget.value })} />
+            <TextInput label="С (МСК)" type="date" value={draft.from ?? ''} onChange={(e) => setDraft({ ...draft, from: e.currentTarget.value })} />
+            <TextInput label="По (МСК, включительно)" type="date" value={draft.to ?? ''} onChange={(e) => setDraft({ ...draft, to: e.currentTarget.value })} />
           </SimpleGrid>
           <Group mt="md" justify="space-between">
             <Checkbox label="Только просмотры карточек и скачивания документов" checked={accessOnly} onChange={(e) => toggleAccess(e.currentTarget.checked)} />
