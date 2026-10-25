@@ -13,11 +13,12 @@ import socket
 import time
 import uuid
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
-from sqlalchemy import and_, delete, select, text, update
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, delete, or_, select, text, update
+from sqlalchemy.orm import Session, aliased
 
 from ..config import get_settings
 from ..db import session_scope
@@ -46,6 +47,7 @@ JOBS_TOTAL = Counter("credit_jobs_total", "Worker jobs by outcome", ["kind", "ou
 JOB_SECONDS = Histogram("credit_job_seconds", "Job duration", ["kind"])
 QUEUE_DEPTH = Gauge("credit_queue_ready_jobs", "Jobs ready to run")
 TIMER_LOCK_KEY = 72_026_001
+HEARTBEAT_PATH = Path("/tmp/credit-worker-heartbeat")
 
 
 class Worker:
@@ -61,26 +63,46 @@ class Worker:
             row = session.execute(
                 text(
                     """
-                    UPDATE jobs SET status = 'RUNNING', locked_by = :worker, locked_at = now(), attempts = attempts + 1
+                    UPDATE jobs SET status = 'RUNNING', locked_by = :worker, locked_at = now(), attempts = attempts + 1,
+                        payload = CASE WHEN payload ? '_stage_version' THEN payload ELSE
+                            payload || jsonb_build_object('_stage_version', (SELECT version FROM applications WHERE id = jobs.application_id)) END
                     WHERE id = (
                         SELECT id FROM jobs WHERE status = 'QUEUED' AND run_at <= now()
                         ORDER BY run_at LIMIT 1 FOR UPDATE SKIP LOCKED
                     )
-                    RETURNING id, kind, application_id, expected_status, attempts, max_attempts, correlation_id, payload
+                    RETURNING id, kind, application_id, expected_status, attempts, max_attempts, correlation_id, payload, locked_at
                     """
                 ),
                 {"worker": self.name},
             ).mappings().first()
             return dict(row) if row else None
 
-    def _finish(self, job_id: uuid.UUID, status: str, error: str | None = None, run_at=None) -> None:
+    def _owned_job(self, session: Session, job: dict[str, Any]) -> Job | None:
+        return session.execute(select(Job).where(
+            Job.id == job["id"], Job.status == "RUNNING", Job.locked_by == self.name,
+            Job.attempts == job["attempts"], Job.locked_at == job["locked_at"],
+        ).with_for_update()).scalar_one_or_none()
+
+    def _finish(self, job: dict[str, Any], status: str, error: str | None = None, run_at=None) -> None:
         with session_scope() as session:
-            values: dict[str, Any] = {"status": status, "last_error": error}
+            row = self._owned_job(session, job)
+            if row is None:
+                return
+            row.status, row.last_error = status, error
             if status == "QUEUED":
-                values.update(run_at=run_at, locked_by=None, locked_at=None)
+                row.run_at, row.locked_by, row.locked_at = run_at, None, None
             else:
-                values.update(finished_at=utcnow())
-            session.execute(update(Job).where(Job.id == job_id, Job.locked_by == self.name).values(**values))
+                row.finished_at = utcnow()
+
+    def _fail_exhausted(self, job: dict[str, Any], actor: Actor, error: str) -> None:
+        with session_scope() as session:
+            # Commands lock the application before cancelling jobs; keep the same lock order.
+            session.execute(select(Application).where(Application.id == job["application_id"]).with_for_update()).scalar_one_or_none()
+            row = self._owned_job(session, job)
+            if row is None:
+                return
+            tasks.fail_after_exhausted(session, job, actor)
+            row.status, row.last_error, row.finished_at = "FAILED", error, utcnow()
 
     def run_job(self, job: dict[str, Any]) -> None:
         kind = JobKind(job["kind"])
@@ -88,26 +110,25 @@ class Worker:
         started = time.perf_counter()
         try:
             tasks.HANDLERS[kind](job, actor)
-            self._finish(job["id"], "DONE")
+            self._finish(job, "DONE")
             JOBS_TOTAL.labels(kind, "done").inc()
         except tasks.StaleTask:
-            self._finish(job["id"], "DONE", "stale: application moved on")
+            self._finish(job, "DONE", "stale: application moved on")
             JOBS_TOTAL.labels(kind, "stale").inc()
         except ApiError as exc:
             # a conflicting concurrent change (client withdrew, version moved): nothing to do
-            self._finish(job["id"], "DONE", f"conflict: {exc.code}")
+            self._finish(job, "DONE", f"conflict: {exc.code}")
             JOBS_TOTAL.labels(kind, "conflict").inc()
         except Exception as exc:  # noqa: BLE001
             s = get_settings()
             log.exception("job failed", extra={"fields": {"job_id": str(job["id"]), "kind": kind.value, "attempt": job["attempts"]}})
             if job["attempts"] < job["max_attempts"]:
                 delay = s.job_backoff_base_seconds * (2 ** (job["attempts"] - 1))
-                self._finish(job["id"], "QUEUED", f"{type(exc).__name__}: {exc}"[:1000], run_at=utcnow() + timedelta(seconds=delay))
+                self._finish(job, "QUEUED", f"{type(exc).__name__}: {exc}"[:1000], run_at=utcnow() + timedelta(seconds=delay))
                 JOBS_TOTAL.labels(kind, "retry").inc()
             else:
-                self._finish(job["id"], "FAILED", f"{type(exc).__name__}: {exc}"[:1000])
+                self._fail_exhausted(job, actor, f"{type(exc).__name__}: {exc}"[:1000])
                 JOBS_TOTAL.labels(kind, "failed").inc()
-                tasks.fail_after_exhausted(job, actor)
         finally:
             JOB_SECONDS.labels(kind).observe(time.perf_counter() - started)
 
@@ -119,11 +140,52 @@ class Worker:
                 return
             QUEUE_DEPTH.set(session.execute(text("SELECT count(*) FROM jobs WHERE status = 'QUEUED' AND run_at <= now()")).scalar_one())
             self._requeue_stale_jobs(session)
-        for timer in (self._enrichment_retry, self._offer_expiry, self._offer_expiring, self._info_expiry, self._draft_expiry, self._review_sla, self._signing_codes, self._outbox):
+        failure = None
+        for timer in (self._recover_failed_jobs, self._enrichment_retry, self._offer_expiry, self._offer_expiring, self._info_expiry, self._draft_expiry, self._review_sla, self._signing_codes, self._outbox):
             try:
                 timer()
-            except Exception:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 log.exception("timer failed", extra={"fields": {"timer": timer.__name__}})
+                failure = exc
+        if failure is not None:
+            raise failure
+
+    def _recover_failed_jobs(self) -> None:
+        """Repair terminal jobs left behind by an interrupted older worker."""
+        other = aliased(Job)
+        superseded = select(other.id).where(
+            other.application_id == Job.application_id, other.id != Job.id,
+            or_(other.created_at > Job.created_at, other.status.in_(["QUEUED", "RUNNING"])),
+        ).exists()
+        stage_version = Job.payload["_stage_version"].as_integer()
+        with session_scope() as session:
+            ids = list(session.execute(select(Job.id).join(Application, Application.id == Job.application_id).where(
+                Job.status == "FAILED", Job.attempts >= Job.max_attempts,
+                Application.status == Job.expected_status, Application.is_history.is_(False),
+                Job.finished_at.is_not(None), Application.status_changed_at <= Job.finished_at,
+                or_(stage_version.is_(None), Application.version == stage_version), ~superseded,
+            ).order_by(Job.finished_at).limit(50)).scalars())
+        for job_id in ids:
+            with session_scope() as session:
+                app = session.execute(select(Application).join(Job, Job.application_id == Application.id).where(
+                    Job.id == job_id,
+                ).with_for_update(skip_locked=True, of=Application)).scalar_one_or_none()
+                if app is None:
+                    continue
+                row = session.execute(select(Job).where(Job.id == job_id, Job.status == "FAILED").with_for_update(skip_locked=True)).scalar_one_or_none()
+                if row is None or app.status != row.expected_status or row.finished_at is None:
+                    continue
+                stage_version = row.payload.get("_stage_version")
+                if stage_version is not None and app.version != stage_version:
+                    continue
+                if app.status_changed_at > row.finished_at:
+                    continue
+                newer = session.execute(select(Job.id).where(
+                    Job.application_id == app.id, Job.id != row.id,
+                    or_(Job.created_at > row.created_at, Job.status.in_(["QUEUED", "RUNNING"])),
+                ).limit(1)).first()
+                if newer is None:
+                    tasks.fail_after_exhausted(session, {"application_id": app.id, "expected_status": row.expected_status, "payload": row.payload}, Actor.system(row.correlation_id))
 
     def _requeue_stale_jobs(self, session: Session) -> None:
         lease = timedelta(seconds=get_settings().job_lease_seconds)
@@ -259,21 +321,34 @@ class Worker:
             start_http_server(s.worker_metrics_port)
         except OSError:
             log.warning("metrics port is busy, worker metrics are not exported")
+        configs_ready = False
         try:
-            get_registry().load()
-        except ConfigError as exc:
-            log.error("configs failed to load, SCORE and DECIDE will fail", extra={"fields": {"error": str(exc)}})
-        log.info("worker started", extra={"fields": {"worker": self.name}})
-        while not self.stopping:
-            try:
-                busy = self.tick()
-            except Exception:  # noqa: BLE001 (database restart and similar: back off and continue)
-                log.exception("worker tick failed")
-                busy = False
-                time.sleep(2)
-            if not busy:
-                time.sleep(s.worker_poll_interval_seconds)
-        log.info("worker stopped", extra={"fields": {"worker": self.name}})
+            log.info("worker started", extra={"fields": {"worker": self.name}})
+            while not self.stopping:
+                try:
+                    if not configs_ready:
+                        get_registry().load()
+                        configs_ready = True
+                        self._heartbeat()
+                    busy = self.tick()
+                    self._heartbeat()
+                except Exception:  # noqa: BLE001 (database restart and similar: back off and continue)
+                    log.exception("worker tick failed")
+                    busy = False
+                    time.sleep(2)
+                if not busy:
+                    time.sleep(s.worker_poll_interval_seconds)
+        finally:
+            HEARTBEAT_PATH.unlink(missing_ok=True)
+            log.info("worker stopped", extra={"fields": {"worker": self.name}})
+
+    def _heartbeat(self) -> None:
+        temporary = HEARTBEAT_PATH.with_name(f"{HEARTBEAT_PATH.name}.{os.getpid()}.tmp")
+        try:
+            temporary.write_text(str(time.time()), encoding="ascii")
+            temporary.replace(HEARTBEAT_PATH)
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def _stop(self, *_args) -> None:
         self.stopping = True

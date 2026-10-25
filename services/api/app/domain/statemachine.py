@@ -29,7 +29,7 @@ TIMER = frozenset({A.TIMER})
 class Transition:
     id: str
     sources: tuple[Status, ...]
-    target: Status | None  # None: target is the application's failed_stage (T-44)
+    target: Status | None  # None: resolve the retry target from the failure (T-44).
     trigger: str
     actors: frozenset[ActorType]
     guards: tuple[str, ...] = field(default_factory=tuple)
@@ -109,6 +109,13 @@ STATIC_COMMANDS: tuple[tuple[str, frozenset[Status] | None, frozenset[ActorType]
 )
 
 PRE_DECISION_STAGES = frozenset({S.SUBMITTED, S.ENRICHMENT, S.SCORING, S.DECISIONING})
+
+
+def processing_retry_target(failed_stage: str | None, error_code: str | None) -> str | None:
+    """Refresh missing source evidence before repeating scoring and decisioning."""
+    if error_code == "SOURCE_INVALID_RESPONSE" and failed_stage in (S.SCORING, S.DECISIONING):
+        return S.ENRICHMENT
+    return failed_stage
 
 
 @dataclass

@@ -63,6 +63,7 @@ class LedgerState:
 
     lock: threading.Lock = field(default_factory=threading.Lock)
     packages: dict[str, dict[str, Any]] = field(default_factory=dict)
+    package_requests: dict[str, dict[str, Any]] = field(default_factory=dict)
     package_keys: dict[str, tuple[str, str]] = field(default_factory=dict)
     signatures: dict[str, dict[str, Any]] = field(default_factory=dict)
     operations: dict[str, tuple[str, dict[str, Any]]] = field(default_factory=dict)

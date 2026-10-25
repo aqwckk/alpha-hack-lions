@@ -110,12 +110,12 @@ def fetch_source(source: str, inn: str, *, timeout: float, correlation_id: str, 
     return SourceResult(source, outcome, data, error, status_code, ext_id, requested_at, datetime.now(timezone.utc), int(elapsed * 1000))
 
 
-def _operation(system: str, path: str, body: dict[str, Any], *, idempotency_key: str, correlation_id: str) -> dict[str, Any]:
+def _operation(system: str, path: str, body: dict[str, Any] | None, *, idempotency_key: str, correlation_id: str, method: str = "POST") -> dict[str, Any]:
     s = get_settings()
     started = time.perf_counter()
     try:
         with client(s.operation_timeout_seconds) as http:
-            resp = http.post(path, json=body, headers=_headers(correlation_id, idempotency_key))
+            resp = http.request(method, path, json=body, headers=_headers(correlation_id, idempotency_key))
     except httpx.TimeoutException as exc:
         EXTERNAL_CALLS.labels(system, "FAILED").inc()
         raise OperationError("TIMEOUT", f"{system} timeout") from exc
@@ -137,6 +137,11 @@ def _operation(system: str, path: str, body: dict[str, Any], *, idempotency_key:
 
 
 def create_document_package(body: dict[str, Any], *, idempotency_key: str, correlation_id: str) -> dict[str, Any]:
+    try:
+        return _operation("EDO", "/edo/v1/packages/by-key", None, idempotency_key=idempotency_key, correlation_id=correlation_id, method="GET")
+    except OperationError as exc:
+        if exc.http_status != 404 or exc.code != "PACKAGE_NOT_FOUND":
+            raise
     return _operation("EDO", "/edo/v1/packages", body, idempotency_key=idempotency_key, correlation_id=correlation_id)
 
 

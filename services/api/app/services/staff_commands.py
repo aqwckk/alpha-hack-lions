@@ -23,6 +23,7 @@ from ..domain.dictionaries import (
 )
 from ..domain.money import dec, max_amount_for_payment, money
 from ..domain.policy import build_option, rate_for
+from ..domain.validation import normalize
 from ..enums import STAGE_JOB, Command, Outcome, Role, Status
 from ..errors import (
     ApiError,
@@ -161,7 +162,9 @@ def _manual_options(app: Application, grade: str, raw: list[dict[str, Any]], rec
             continue
         product = pol["products"][code]
         try:
-            amount = money(dec(str(o.get("amount"))))
+            amount, amount_error = normalize("amount", o.get("amount"))
+            if amount_error or amount is None:
+                raise ValueError
             term = int(o.get("term_months"))
         except (ArithmeticError, TypeError, ValueError):
             errors.append({"field": f"options.{i}", "code": "INVALID_FORMAT", "message": "Укажите сумму и срок"})
@@ -385,7 +388,7 @@ def retry_processing(session: Session, actor: Actor, app: Application, *, expect
         session, app, "T-44", actor, trigger=Command.RETRY_PROCESSING, expected_version=expected_version,
         changes={"enrichment_retry_count": 0, "next_retry_at": None, "failed_stage": None, "last_error_code": None},
     )
-    enqueue(session, STAGE_JOB[Status(failed_stage)], app, correlation_id=actor.correlation_id)
+    enqueue(session, STAGE_JOB[Status(app.status)], app, correlation_id=actor.correlation_id)
     emit(session, "PROCESSING_RETRIED", actor, application=app, payload={"failed_stage": failed_stage})
     return app
 

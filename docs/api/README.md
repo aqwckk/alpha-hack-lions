@@ -40,6 +40,7 @@ REST API на JSON для веб-кабинета клиента и рабоче
 * **`available_actions`.** Каждый ответ с заявкой содержит список команд, которые текущий пользователь может выполнить сейчас. Он вычисляется из той же декларативной таблицы переходов, которой проверяются команды (`app/domain/statemachine.py`). Интерфейс показывает кнопки только из этого списка. Коды: `UPDATE_DRAFT`, `PREFILL_BY_INN`, `GIVE_CONSENT`, `REVOKE_CONSENT`, `UPLOAD_DOCUMENT`, `DELETE_DOCUMENT`, `SUBMIT`, `RESPOND_INFO`, `WITHDRAW`, `ACCEPT_OFFER`, `DECLINE_OFFER`, `REQUEST_SIGNING_CODE`, `SIGN`, `TAKE`, `RELEASE`, `APPROVE`, `MAKE_COUNTER_OFFER`, `REQUEST_INFO`, `DECLINE`, `CONFIRM_DECISION`, `RETURN_DECISION`, `RETRY_PROCESSING`, `ADD_COMMENT`.
 * **`expected_version`.** Команды, меняющие заявку, передают в теле версию, которую видел пользователь. Если заявка изменилась, ответ `409 VERSION_CONFLICT` с `details.current_version`; если команда недопустима в текущем статусе, `409 INVALID_TRANSITION`. Смена статуса выполняется одним условным `UPDATE ... WHERE status = :from AND version = :expected`.
 * **`Idempotency-Key`.** Обязателен для команд, меняющих статус (создание, отправка, ответ на дозапрос, отмена, принятие и отказ от предложения, код и подпись, все решения сотрудников). Повтор с тем же ключом и тем же телом возвращает сохраненный ответ с заголовком `Idempotent-Replayed: true` и не выполняет команду второй раз; тот же ключ с другим телом дает `422 IDEMPOTENCY_KEY_REUSED`. Ошибочная команда ключ не занимает. Ключи хранятся 24 часа. Для автосохранения черновика ключ необязателен.
+* **Даты фильтров.** `created_from`/`created_to` в очереди и `from`/`to` в аудите принимают timestamp с часовым поясом и задают полуоткрытый интервал `[from, to)`. Интерфейс переводит календарные даты в московское время: выбор с 25 по 25 октября означает от `2026-10-25T00:00:00+03:00` до `2026-10-26T00:00:00+03:00`. Дата без часового пояса отклоняется с 422.
 
 ## 4. Ресурсы
 
@@ -50,7 +51,7 @@ REST API на JSON для веб-кабинета клиента и рабоче
 | `GET /api/v1/catalog/products` | продукты активной политики: границы, ставки, требования, обязательные документы |
 | `GET /api/v1/catalog/dictionaries` | цели, типы документов, полные тексты согласий с версией и хешем, причины отказа от предложения, роли представителя, типы залога |
 | `POST /api/v1/catalog/match` | подбор по задаче: `{purpose, amount, term_months, applicant_type?, inn?}`; карточки с пометкой "Рекомендуем", платеж и переплата по базовой ставке, требования; с ИНН ранняя проверка возраста бизнеса (`available=false`, `eligible_date`) |
-| `POST /api/v1/catalog/calculate` | аннуитетный платеж, итого и переплата; `with_schedule=true` добавляет график; доступен всем ролям (сотрудник считает платеж в диалоге "Изменить условия") |
+| `POST /api/v1/catalog/calculate` | аннуитетный платеж, итого и переплата; `with_schedule=true` добавляет график; доступен всем ролям. Сумма в целых рублях, границы/шаг суммы и срок по продукту. Необязательная ставка: конечное число от 0 до 100% с точностью до двух знаков; ошибка ввода возвращает 422 |
 | `POST /api/v1/analytics/events` | события мастера подбора `PRODUCT_WIZARD_STARTED`, `PRODUCT_SELECTED` (`wizard_session_id`) для метрик конверсии |
 
 ### 4.2. Заявка клиента
@@ -62,15 +63,15 @@ REST API на JSON для веб-кабинета клиента и рабоче
 | `GET /api/v1/applications/{id}` | | полный клиентский вид (раздел 5) |
 | `PATCH /api/v1/applications/{id}` | `UPDATE_DRAFT` (T-02) | автосохранение: меняются только переданные поля, `null` очищает поле; поля с ошибкой формата возвращаются в `field_errors`, остальные сохраняются |
 | `POST /api/v1/applications/{id}/prefill` | `PREFILL_BY_INN` | `{inn?, expected_version?}`: сведения ЕГРЮЛ/ЕГРИП и ФНС из моков (блок `company`), ранние предупреждения `early_warnings`; результат `FOUND`, `NOT_FOUND` или `SOURCE_UNAVAILABLE` (можно продолжать) |
-| `PUT` / `DELETE /api/v1/applications/{id}/consents/{type}` | `GIVE_CONSENT` / `REVOKE_CONSENT` | `CONSENT_PERSONAL_DATA`, `CONSENT_CREDIT_BUREAU` (6 месяцев), `AUTHORITY_CONFIRMATION`; фиксируются время сервера, версия и хеш текста, IP, user agent |
-| `POST /api/v1/applications/{id}/documents` | `UPLOAD_DOCUMENT` | multipart: `document_type`, `file`, `info_request_item_id` (в `INFO_REQUESTED`), PDF/JPG/PNG по сигнатуре файла, до 10 МБ, до 20 файлов |
+| `PUT` / `DELETE /api/v1/applications/{id}/consents/{type}` | `GIVE_CONSENT` / `REVOKE_CONSENT` | `CONSENT_PERSONAL_DATA`, `CONSENT_CREDIT_BUREAU` (183 календарных дня), `AUTHORITY_CONFIRMATION`; требуется ИНН, фиксируются субъект, время сервера, версия и хеш текста, IP, user agent. Смена ИНН отзывает прежние согласия; подача и БКИ проверяют соответствие субъекта |
+| `POST /api/v1/applications/{id}/documents` | `UPLOAD_DOCUMENT` | multipart: `document_type`, `file`, `info_request_item_id` (в `INFO_REQUESTED`), PDF/JPG/PNG по сигнатуре файла, до 10 МБ. До подачи: 20 файлов на заявку; в дозапросе: отдельные 20 файлов на каждый пункт |
 | `GET .../documents/{doc_id}/content`, `DELETE .../documents/{doc_id}` | `DELETE_DOCUMENT` | удаление только в черновике |
 | `POST /api/v1/applications/{id}/submit` | `SUBMIT` (T-03) | полная проверка полей продукта, согласий, ИНН, дубликата активной заявки (`409 DUPLICATE_ACTIVE_APPLICATION`) |
-| `POST /api/v1/applications/{id}/info-response` | `RESPOND_INFO` (T-10) | `{expected_version, answers: [{item_id, answer_text?, answer_value?, document_ids?}]}`; ответы на все обязательные пункты |
+| `POST /api/v1/applications/{id}/info-response` | `RESPOND_INFO` (T-10) | `{expected_version, answers: [{item_id, answer_text?, answer_value?, document_ids?}]}`; ответы на все обязательные пункты, текст до 2000 символов |
 | `POST /api/v1/applications/{id}/withdraw` | `WITHDRAW` (T-04, T-11, T-41, T-45) | |
 | `POST /api/v1/applications/{id}/offer/accept` | `ACCEPT_OFFER` (T-33) | `{expected_version, option_id}`; после `expires_at` ответ `409 OFFER_EXPIRED` |
 | `POST /api/v1/applications/{id}/offer/decline` | `DECLINE_OFFER` (T-34, T-38, T-46) | `{expected_version, reason_code?}` из `OD_*` |
-| `GET /api/v1/applications/{id}/schedule?option_id=` | | график платежей варианта или выданного кредита |
+| `GET /api/v1/applications/{id}/schedule?option_id=` | | предварительный график варианта; после подготовки документов для выбранного варианта возвращается зафиксированный график пакета, после выдачи тот же график из `Loan` |
 | `GET /api/v1/applications/{id}/signing-documents/{doc_id}` | | текст документа от мока ЭДО перед подписанием |
 | `POST /api/v1/applications/{id}/signing-code` | `REQUEST_SIGNING_CODE` | 6 цифр, 5 минут, прежний код аннулируется, не больше 5 кодов в час; в демо-режиме код приходит в ответе и в уведомлении `NTF_SIGNING_CODE` |
 | `POST /api/v1/applications/{id}/sign` | `SIGN` (T-39) | `{expected_version, code}`; неверный код: `422 SIGNING_CODE_INVALID` с `details.attempts_left`, после 3 попыток код аннулируется |
@@ -185,6 +186,6 @@ curl -s $API/v1/applications/$ID/submit -H "$AUTH" -H "Idempotency-Key: $(uuidge
 | Путь | Что проверяет |
 |---|---|
 | `GET /api/v1/meta` | публичные флаги интерфейса до входа: `demo_mode` (подсказка с тестовыми учетными записями и демо-панель), `ai_enabled` |
-| `GET /api/health/live` | процесс жив (healthcheck контейнера) |
-| `GET /api/health/ready` | доступна БД, загружены скоринговая карта и политика ожидаемых версий; иначе 503 |
+| `GET /api/health/live` | процесс отвечает, независимо от доступности зависимостей |
+| `GET /api/health/ready` | healthcheck контейнера API: доступна БД, загружены скоринговая карта и политика ожидаемых версий; иначе 503 |
 | `GET /metrics` | Prometheus: запросы и задержки по маршрутам, переходы T-xx, события, вызовы внешних систем; у воркера свой `/metrics` на порту 9100 (задачи, длительность, очередь) |

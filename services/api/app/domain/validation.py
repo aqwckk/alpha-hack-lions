@@ -45,7 +45,7 @@ def normalize(field: str, value: Any) -> tuple[Any, dict[str, Any] | None]:
             d = Decimal(str(value))
         except (InvalidOperation, ValueError):
             return None, field_error(field, "INVALID_FORMAT", hint="сумма в рублях, например 1500000")
-        if not d.is_finite() or d < 0 or d > MAX_MONEY or d != d.quantize(Decimal("0.01")):
+        if not d.is_finite() or d < 0 or d > MAX_MONEY or (field == "amount" and d == 0) or d != d.quantize(Decimal("0.01")):
             return None, field_error(field, "INVALID_FORMAT", hint="сумма в рублях, не больше 10 000 000 000")
         if field == "amount" and d != d.to_integral_value():
             return None, field_error(field, "INVALID_FORMAT", hint="сумма кредита в целых рублях")

@@ -15,6 +15,10 @@ def test_investment_loan_from_draft_to_issued(draft_ready, login, worker, mock_a
     client, view = draft_ready("S3")
     app_id = view["id"]
     uw, risk = login("uw.dmitry"), login("risk.elena")
+    for n in range(20 - len(view["documents"])):
+        response = client.http.post(f"/api/v1/applications/{app_id}/documents", data={"document_type": "COLLATERAL_DOCUMENTS"}, files={"file": (f"collateral-{n}.pdf", b"%PDF-1.4\n%%EOF\n", "application/pdf")})
+        assert response.status_code == 201, response.text
+        view = response.json()
     client.post(f"/api/v1/applications/{app_id}/submit", {"expected_version": view["version"]})
     worker.drain()
     assert client.get(f"/api/v1/applications/{app_id}").json()["client_status"] == "SPECIALIST_REVIEW"
@@ -24,12 +28,21 @@ def test_investment_loan_from_draft_to_issued(draft_ready, login, worker, mock_a
     card = uw.post(f"/api/v1/bank/applications/{app_id}/take", {"expected_version": card["version"]}).json()
     card = uw.post(f"/api/v1/bank/applications/{app_id}/request-info", {
         "expected_version": card["version"], "comment": "Нужно пояснение",
-        "items": [{"reason_code": "NI_DATA_MISMATCH_EXPLANATION", "answer_type": "FIELD", "field_name": "monthly_revenue_declared"}],
+        "items": [
+            {"reason_code": "NI_DATA_MISMATCH_EXPLANATION", "answer_type": "FIELD", "field_name": "monthly_revenue_declared"},
+            {"reason_code": "NI_COLLATERAL_DOCUMENTS", "answer_type": "DOCUMENT", "document_type": "COLLATERAL_DOCUMENTS"},
+        ],
     }).json()
 
     view = client.get(f"/api/v1/applications/{app_id}").json()
     item = view["info_request"]["items"][0]
-    view = client.post(f"/api/v1/applications/{app_id}/info-response", {"expected_version": view["version"], "answers": [{"item_id": item["id"], "answer_value": "6500000"}]}).json()
+    document_item = view["info_request"]["items"][1]
+    response = client.http.post(f"/api/v1/applications/{app_id}/documents", data={"document_type": "COLLATERAL_DOCUMENTS", "info_request_item_id": document_item["id"]}, files={"file": ("additional.pdf", b"%PDF-1.4\n%%EOF\n", "application/pdf")})
+    assert response.status_code == 201, response.text
+    view = response.json()
+    assert len(view["documents"]) == 21
+    new_document = next(d for d in view["documents"] if d["info_request_item_id"] == document_item["id"])
+    view = client.post(f"/api/v1/applications/{app_id}/info-response", {"expected_version": view["version"], "answers": [{"item_id": item["id"], "answer_value": "6500000"}, {"item_id": document_item["id"], "document_ids": [new_document["id"]]}]}).json()
     worker.drain()
     card = uw.get(f"/api/v1/bank/applications/{app_id}").json()
     assert card["status"] == "IN_REVIEW" and "MR_RETURNED_AFTER_INFO" in [r["code"] for r in card["manual_review_reasons"]]

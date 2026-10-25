@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import AwareDatetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -23,8 +24,8 @@ router = APIRouter(prefix="/api/v1/risk", tags=["risk manager"])
 @router.get("/metrics")
 def metrics(
     period_days: int | None = Query(30, ge=1, le=366),
-    date_from: datetime | None = Query(default=None, alias="from"),
-    date_to: datetime | None = Query(default=None, alias="to"),
+    date_from: AwareDatetime | None = Query(default=None, alias="from", description="Inclusive timestamp with timezone"),
+    date_to: AwareDatetime | None = Query(default=None, alias="to", description="Exclusive timestamp with timezone"),
     product_code: str | None = None,
     actor: Actor = Depends(risk_actor),
     session: Session = Depends(get_db),
@@ -65,8 +66,8 @@ def audit_log(
     actor_login: str | None = None,
     application_id: str | None = None,
     access_only: bool = Query(False, description="Only card views and document downloads"),
-    date_from: datetime | None = Query(default=None, alias="from"),
-    date_to: datetime | None = Query(default=None, alias="to"),
+    date_from: AwareDatetime | None = Query(default=None, alias="from", description="Inclusive timestamp with timezone; UI calendar dates use Europe/Moscow"),
+    date_to: AwareDatetime | None = Query(default=None, alias="to", description="Exclusive timestamp with timezone; for an inclusive UI date use the start of the following day"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     actor: Actor = Depends(risk_actor),

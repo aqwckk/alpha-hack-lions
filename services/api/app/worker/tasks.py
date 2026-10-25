@@ -33,7 +33,6 @@ from ..domain.dictionaries import (
 )
 from ..domain.money import add_months, money, payment_schedule
 from ..enums import JobKind, Outcome, Role, Status, Trigger
-from ..errors import ApiError
 from ..models import (
     Application,
     Consent,
@@ -42,10 +41,12 @@ from ..models import (
     DocumentPackage,
     Event,
     GeneratedDocument,
+    IntegrationRequest,
     Loan,
     OfferOption,
     ScoringResult,
     SourceSnapshot,
+    Signature,
     User,
 )
 from ..services import integrations
@@ -61,6 +62,7 @@ from ..services.core import (
     utcnow,
 )
 from ..services.params import process_params
+from ..services.schedules import package_schedule
 from ..services.staff_commands import (
     create_info_request,
     create_offer,
@@ -89,6 +91,21 @@ def _load(session: Session, application_id: uuid.UUID, expected: str) -> Applica
     if app is None or app.status != expected:
         raise StaleTask
     return app
+
+
+def _locked_app(session: Session, application_id: uuid.UUID, expected: str, version: int | None = None) -> Application:
+    app = session.execute(select(Application).where(Application.id == application_id).with_for_update()).scalar_one_or_none()
+    if app is None or app.status != expected or (version is not None and app.version != version):
+        raise StaleTask
+    return app
+
+
+def _remember_response(key: str, response: dict[str, Any]) -> dict[str, Any]:
+    with session_scope() as session:
+        intent = session.execute(select(IntegrationRequest).where(IntegrationRequest.idempotency_key == key).with_for_update()).scalar_one()
+        if intent.response is None:
+            intent.response = response
+        return intent.response
 
 
 def fail_stage(session: Session, app: Application, actor: Actor, error_code: str) -> None:
@@ -160,14 +177,29 @@ def _applicable_sources(app: Application) -> list[str]:
 
 
 def _cached(session: Session, app: Application, source: str) -> SourceSnapshot | None:
-    return session.execute(
+    consent = _bureau_consent(session, app) if source == "CREDIT_BUREAU" else None
+    if source == "CREDIT_BUREAU" and consent is None:
+        return None
+    query = (
         select(SourceSnapshot)
         .where(
             SourceSnapshot.application_id == app.id, SourceSnapshot.source == source, SourceSnapshot.inn == app.applicant_inn,
             SourceSnapshot.outcome.in_(["SUCCESS", "NO_DATA"]), SourceSnapshot.valid_until > utcnow(),
         )
-        .order_by(SourceSnapshot.responded_at.desc())
-        .limit(1)
+    )
+    if consent is not None:
+        query = query.where(SourceSnapshot.requested_at >= consent.granted_at)
+    return session.execute(query.order_by(SourceSnapshot.responded_at.desc()).limit(1)).scalar_one_or_none()
+
+
+def _bureau_consent(session: Session, app: Application) -> Consent | None:
+    now = utcnow()
+    return session.execute(
+        select(Consent).where(
+            Consent.application_id == app.id, Consent.consent_type == "CONSENT_CREDIT_BUREAU",
+            Consent.subject_inn == app.applicant_inn, Consent.revoked_at.is_(None),
+            Consent.granted_at <= now, Consent.expires_at > now,
+        ).order_by(Consent.granted_at.desc()).limit(1)
     ).scalar_one_or_none()
 
 
@@ -192,17 +224,13 @@ def enrich(job: dict[str, Any], actor: Actor) -> None:
         app = _load(session, job["application_id"], Status.ENRICHMENT)
         version, inn = app.version, app.applicant_inn
         sources = _applicable_sources(app)
+        c = _bureau_consent(session, app)
+        if c is None:
+            fail_stage(session, app, actor, "CONSENT_MISSING")
+            return
+        consent_id = c.id
+        consent = {"consent_id": str(c.id), "subject_inn": c.subject_inn, "granted_at": c.granted_at.isoformat(), "expires_at": c.expires_at.isoformat(), "text_version": c.text_version}
         cached = {src: snap.id for src in sources if (snap := _cached(session, app, src)) is not None}
-        consent = None
-        if "CREDIT_BUREAU" not in cached:
-            c = session.execute(
-                select(Consent).where(Consent.application_id == app.id, Consent.consent_type == "CONSENT_CREDIT_BUREAU", Consent.revoked_at.is_(None), Consent.expires_at > utcnow())
-                .order_by(Consent.granted_at.desc()).limit(1)
-            ).scalar_one_or_none()
-            if c is None:
-                fail_stage(session, app, actor, "CONSENT_MISSING")
-                return
-            consent = {"consent_id": str(c.id), "granted_at": c.granted_at.isoformat(), "expires_at": c.expires_at.isoformat(), "text_version": c.text_version}
         prior_attempts = dict(
             session.execute(
                 select(SourceSnapshot.source, func.count()).where(SourceSnapshot.application_id == app.id, SourceSnapshot.stage == "ENRICH").group_by(SourceSnapshot.source)
@@ -216,9 +244,13 @@ def enrich(job: dict[str, Any], actor: Actor) -> None:
             results = {src: f.result() for src, f in futures.items()}
 
     with session_scope() as session:
-        app = session.get(Application, job["application_id"])
+        app = session.execute(select(Application).where(Application.id == job["application_id"]).with_for_update()).scalar_one_or_none()
         if app is None or app.status != Status.ENRICHMENT or app.version != version:
             raise StaleTask
+        c = _bureau_consent(session, app)
+        if c is None or c.id != consent_id:
+            fail_stage(session, app, actor, "CONSENT_MISSING")
+            return
         for src in sources:
             if src in cached:
                 emit(session, "SOURCE_REQUEST_SUCCEEDED", actor, application=app, payload={"source": src, "attempt": 0, "latency_ms": 0, "from_cache": True})
@@ -253,11 +285,17 @@ def enrich(job: dict[str, Any], actor: Actor) -> None:
 # ------------------------------------------------------------------------------ SCORE and DECIDE
 
 
+class MissingSourceData(Exception):
+    """Missing/expired evidence is a technical failure, not a negative source answer."""
+
+
 def build_case(session: Session, app: Application) -> dict[str, Any]:
     sources: dict[str, Any] = {}
-    for src in ("REGISTRY", "FNS", "FINANCIAL_STATEMENTS", "CREDIT_BUREAU", "BANK_TURNOVER"):
+    for src in _applicable_sources(app):
         snap = _cached(session, app, src)
-        sources[src] = snap.response if snap is not None else None
+        if snap is None or (snap.outcome == "SUCCESS" and snap.response is None):
+            raise MissingSourceData(src)
+        sources[src] = snap.response
     if sources["REGISTRY"] is None:
         sources["REGISTRY"] = {"found": False}
     if app.applicant_type != "LEGAL_ENTITY":
@@ -296,7 +334,11 @@ def score(job: dict[str, Any], actor: Actor) -> None:
         except ConfigError:
             fail_stage(session, app, actor, "CONFIG_LOAD_FAILED")
             return
-        case = build_case(session, app)
+        try:
+            case = build_case(session, app)
+        except MissingSourceData:
+            fail_stage(session, app, actor, "SOURCE_INVALID_RESPONSE")
+            return
         result = scoring_engine.score(case, scorecard.content)
         sr = ScoringResult(
             id=uuid.uuid4(), application_id=app.id, score=result["score"], grade=result["grade"], pd=Decimal(result["pd"]), features=result["features"],
@@ -319,7 +361,11 @@ def decide(job: dict[str, Any], actor: Actor) -> None:
             return
         sr = session.execute(select(ScoringResult).where(ScoringResult.application_id == app.id).order_by(ScoringResult.calculated_at.desc()).limit(1)).scalar_one()
         case = dict(sr.scoring_input)
-        case["state"] = build_case(session, app)["state"]
+        try:
+            case["state"] = build_case(session, app)["state"]
+        except MissingSourceData:
+            fail_stage(session, app, actor, "SOURCE_INVALID_RESPONSE")
+            return
         result = policy_engine.decide(case, {"score": sr.score, "grade": sr.grade, "scorecard_version": sr.scorecard_version}, policy.content)
         decision = Decision(
             id=uuid.uuid4(), application_id=app.id, scoring_result_id=sr.id, outcome=result["outcome"], mode="AUTO", status="FINAL",
@@ -402,46 +448,54 @@ def _with_retries(fn, attempts: int):
 def prepare_documents(job: dict[str, Any], actor: Actor) -> None:
     s = get_settings()
     with session_scope() as session:
-        app = _load(session, job["application_id"], Status.OFFER_ACCEPTED)
+        app = _locked_app(session, job["application_id"], Status.OFFER_ACCEPTED)
         version = app.version
-        option = session.get(OfferOption, app.final_option_id)
-        pol = get_registry().policy_content()
-        product = pol["products"][option.product_code]
-        reg = app.registry_data or {}
-        founders = reg.get("founders") or []
-        guarantor = max(founders, key=lambda f: Decimal(str(f.get("share_percent") or 0)))["name"] if founders else reg.get("director_full_name")
-        payment_term = option.tranche_max_term_months or option.term_months
-        first_payment = add_months(datetime.now(MSK).date(), 1)
-        docs = ["CREDIT_AGREEMENT", "PAYMENT_SCHEDULE"]
-        if option.requires_owner_guarantee:
-            docs.append("GUARANTEE_AGREEMENT")
-        if option.requires_collateral:
-            docs.append("PLEDGE_AGREEMENT")
-        body = {
-            "application_id": str(app.id),
-            "application_number": app.application_number,
-            "applicant": {"inn": app.applicant_inn, "name": app.company_short_name or app.applicant_inn, "applicant_type": app.applicant_type, "guarantor_name": guarantor if app.applicant_type == "LEGAL_ENTITY" else None},
-            "terms": {
-                "product_code": option.product_code, "product_name": product["name"], "amount": str(option.amount), "term_months": option.term_months,
-                "rate_percent": str(option.rate_percent), "monthly_payment": str(option.monthly_payment), "total_payment": str(option.total_payment),
-                "overpayment": str(option.overpayment), "tranche_max_term_months": option.tranche_max_term_months,
-            },
-            "documents": docs,
-            "schedule": payment_schedule(option.amount, option.rate_percent, payment_term, first_payment),
-            "collateral": {"type": app.collateral_type, "description": app.collateral_description, "value": str(app.collateral_value) if app.collateral_value else None} if option.requires_collateral else None,
-        }
+        key = f"EDO:{app.id}:{app.final_option_id}"
+        intent = session.get(IntegrationRequest, key)
+        if intent is None:
+            option = session.get(OfferOption, app.final_option_id)
+            pol = get_registry().policy_content()
+            product = pol["products"][option.product_code]
+            reg = app.registry_data or {}
+            founders = reg.get("founders") or []
+            guarantor = max(founders, key=lambda f: Decimal(str(f.get("share_percent") or 0)))["name"] if founders else reg.get("director_full_name")
+            payment_term = option.tranche_max_term_months or option.term_months
+            first_payment = add_months(datetime.fromisoformat(msk_today()).date(), 1)
+            docs = ["CREDIT_AGREEMENT", "PAYMENT_SCHEDULE"]
+            if option.requires_owner_guarantee:
+                docs.append("GUARANTEE_AGREEMENT")
+            if option.requires_collateral:
+                docs.append("PLEDGE_AGREEMENT")
+            body = {
+                "application_id": str(app.id),
+                "application_number": app.application_number,
+                "applicant": {"inn": app.applicant_inn, "name": app.company_short_name or app.applicant_inn, "applicant_type": app.applicant_type, "guarantor_name": guarantor if app.applicant_type == "LEGAL_ENTITY" else None},
+                "terms": {
+                    "product_code": option.product_code, "product_name": product["name"], "amount": str(option.amount), "term_months": option.term_months,
+                    "rate_percent": str(option.rate_percent), "monthly_payment": str(option.monthly_payment), "total_payment": str(option.total_payment),
+                    "overpayment": str(option.overpayment), "tranche_max_term_months": option.tranche_max_term_months,
+                },
+                "documents": docs,
+                "schedule": payment_schedule(option.amount, option.rate_percent, payment_term, first_payment),
+                "collateral": {"type": app.collateral_type, "description": app.collateral_description, "value": str(app.collateral_value) if app.collateral_value else None} if option.requires_collateral else None,
+            }
+            intent = IntegrationRequest(idempotency_key=key, application_id=app.id, system="EDO", request=body)
+            session.add(intent)
+        body, package = intent.request, intent.response
+        option_id = app.final_option_id
+
     try:
-        package = _with_retries(lambda: integrations.create_document_package(body, idempotency_key=f"EDO:{job['application_id']}:{option.id}", correlation_id=actor.correlation_id), s.operation_attempts)
+        if package is None:
+            package = _with_retries(lambda: integrations.create_document_package(body, idempotency_key=key, correlation_id=actor.correlation_id), s.operation_attempts)
+            package = _remember_response(key, package)
     except integrations.OperationError:
         with session_scope() as session:
-            app = _load(session, job["application_id"], Status.OFFER_ACCEPTED)
+            app = _locked_app(session, job["application_id"], Status.OFFER_ACCEPTED, version)
             fail_stage(session, app, actor, "EDO_FAILED")
         return
     with session_scope() as session:
-        app = session.get(Application, job["application_id"])
-        if app is None or app.status != Status.OFFER_ACCEPTED or app.version != version:
-            raise StaleTask
-        pkg = DocumentPackage(id=uuid.uuid4(), application_id=app.id, offer_option_id=option.id, external_package_id=package["package_id"], edo_operation_id=package["edo_operation_id"], contract_number=package["contract_number"], status="READY_FOR_SIGNING", created_at=utcnow())
+        app = _locked_app(session, job["application_id"], Status.OFFER_ACCEPTED, version)
+        pkg = DocumentPackage(id=uuid.uuid4(), application_id=app.id, offer_option_id=option_id, external_package_id=package["package_id"], edo_operation_id=package["edo_operation_id"], contract_number=package["contract_number"], status="READY_FOR_SIGNING", created_at=utcnow())
         session.add(pkg)
         session.flush()
         for d in package["documents"]:
@@ -454,25 +508,39 @@ def prepare_documents(job: dict[str, Any], actor: Actor) -> None:
 def issue_loan(job: dict[str, Any], actor: Actor) -> None:
     s = get_settings()
     with session_scope() as session:
-        app = _load(session, job["application_id"], Status.SIGNED)
+        app = _locked_app(session, job["application_id"], Status.SIGNED)
         version = app.version
-        operation = "CREDIT_LINE_LIMIT" if app.final_product_code == "CREDIT_LINE" else "DISBURSEMENT"
-        body = {
-            "application_id": str(app.id), "operation_type": operation, "borrower_inn": app.applicant_inn, "product_code": app.final_product_code,
-            "amount": str(app.final_amount), "term_months": app.final_term_months, "rate_percent": str(app.final_rate_percent), "monthly_payment": str(app.final_monthly_payment),
-        }
+        key = str(app.id)
+        intent = session.get(IntegrationRequest, key)
+        if intent is None:
+            signature = session.execute(select(Signature).where(Signature.application_id == app.id)).scalar_one()
+            pkg = session.get(DocumentPackage, signature.package_id)
+            schedule = package_schedule(session, pkg)
+            operation = "CREDIT_LINE_LIMIT" if app.final_product_code == "CREDIT_LINE" else "DISBURSEMENT"
+            body = {
+                "application_id": str(app.id), "operation_type": operation, "borrower_inn": app.applicant_inn, "product_code": app.final_product_code,
+                "amount": str(app.final_amount), "term_months": app.final_term_months, "rate_percent": str(app.final_rate_percent), "monthly_payment": str(app.final_monthly_payment),
+                "contract_number": pkg.contract_number, "schedule": schedule, "first_payment_date": schedule[0]["date"],
+            }
+            intent = IntegrationRequest(idempotency_key=key, application_id=app.id, system="ABS", request=body)
+            session.add(intent)
+        body, op = intent.request, intent.response
+        operation = body["operation_type"]
+
     try:
         # the ABS idempotency key is the application id: a repeated task or a manual retry never issues twice
-        op = _with_retries(lambda: integrations.issue_loan(body, idempotency_key=str(job["application_id"]), correlation_id=actor.correlation_id), s.operation_attempts)
+        if op is None:
+            op = _with_retries(lambda: integrations.issue_loan(body, idempotency_key=key, correlation_id=actor.correlation_id), s.operation_attempts)
+            if op["contract_number"] != body["contract_number"] or op["first_payment_date"] != body["first_payment_date"] or op["schedule"] != body["schedule"]:
+                raise integrations.OperationError("INVALID_RESPONSE", "ABS changed the signed terms")
+            op = _remember_response(key, op)
     except integrations.OperationError:
         with session_scope() as session:
-            app = _load(session, job["application_id"], Status.SIGNED)
+            app = _locked_app(session, job["application_id"], Status.SIGNED, version)
             fail_stage(session, app, actor, "ABS_FAILED")
         return
     with session_scope() as session:
-        app = session.get(Application, job["application_id"])
-        if app is None or app.status != Status.SIGNED or app.version != version:
-            raise StaleTask
+        app = _locked_app(session, job["application_id"], Status.SIGNED, version)
         issued_at = datetime.fromisoformat(op["issued_at"].replace("Z", "+00:00"))
         existing = session.execute(select(Loan).where(Loan.application_id == app.id)).scalar_one_or_none()
         if existing is None:
@@ -480,7 +548,8 @@ def issue_loan(job: dict[str, Any], actor: Actor) -> None:
                 id=uuid.uuid4(), application_id=app.id, contract_number=op["contract_number"], account_number_masked=op["account_number_masked"],
                 product_code=app.final_product_code, operation_type=operation, amount=app.final_amount, rate_percent=app.final_rate_percent,
                 term_months=app.final_term_months, monthly_payment=app.final_monthly_payment, issued_at=issued_at,
-                first_payment_date=datetime.fromisoformat(op["first_payment_date"]).date(), abs_operation_id=op["operation_id"],
+                first_payment_date=datetime.fromisoformat(body["first_payment_date"]).date(), abs_operation_id=op["operation_id"],
+                payment_schedule=body["schedule"],
             ))
         apply_transition(session, app, "T-42", actor, trigger=Trigger.LOAN_ISSUED, expected_version=version, changes={"issued_at": issued_at})
         emit(session, "LOAN_ISSUED", actor, application=app, payload={"product_code": app.final_product_code, "amount": str(app.final_amount), "term_months": app.final_term_months, "rate_percent": str(app.final_rate_percent), "abs_operation_id": op["operation_id"], "operation_type": operation})
@@ -498,11 +567,12 @@ HANDLERS = {
 }
 
 
-def fail_after_exhausted(job: dict[str, Any], actor: Actor) -> None:
+def fail_after_exhausted(session: Session, job: dict[str, Any], actor: Actor) -> None:
     """A task kept failing with an unexpected error: hand the application to people (PROCESSING_ERROR)."""
-    try:
-        with session_scope() as session:
-            app = _load(session, job["application_id"], job["expected_status"])
-            fail_stage(session, app, actor, "UNEXPECTED")
-    except (StaleTask, ApiError):
-        pass
+    app = session.get(Application, job["application_id"])
+    if app is None or app.status != job["expected_status"]:
+        return
+    stage_version = job.get("payload", {}).get("_stage_version")
+    if stage_version is not None and app.version != stage_version:
+        return
+    fail_stage(session, app, actor, "UNEXPECTED")

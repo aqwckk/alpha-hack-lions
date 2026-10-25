@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from ..domain.dictionaries import NOTIFICATIONS, render
-from ..domain.statemachine import GuardContext, guard_failure, resolve
+from ..domain.statemachine import GuardContext, guard_failure, processing_retry_target, resolve
 from ..enums import ActorType, Role, Status
 from ..errors import (
     ApiError,
@@ -249,7 +249,7 @@ def apply_transition(
     if expected_version is not None and expected_version != app.version:
         raise version_conflict(app.version)
 
-    target = t.target or app.failed_stage
+    target = t.target or processing_retry_target(app.failed_stage, app.last_error_code)
     if target is None:
         raise Conflict(code="FAILED_STAGE_MISSING")
     now = utcnow()

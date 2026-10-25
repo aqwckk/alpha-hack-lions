@@ -425,10 +425,10 @@ def consent_rows(session: Session, app: Application) -> list[Consent]:
     return list(session.execute(select(Consent).where(Consent.application_id == app.id).order_by(Consent.granted_at)).scalars())
 
 
-def active_consents(rows: list[Consent], now: datetime) -> dict[str, Consent]:
+def active_consents(rows: list[Consent], now: datetime, subject_inn: str | None) -> dict[str, Consent]:
     out = {}
     for c in rows:
-        if c.revoked_at is None and (c.expires_at is None or c.expires_at > now):
+        if subject_inn and c.subject_inn == subject_inn and c.granted_at <= now and c.revoked_at is None and (c.expires_at is None or c.expires_at > now):
             out[c.consent_type] = c
     return out
 
@@ -538,7 +538,7 @@ def client_application_view(session: Session, app: Application, actor: Actor) ->
     ctx = AppContext(session, app)
     now = utcnow()
     consents = consent_rows(session, app)
-    active = active_consents(consents, now)
+    active = active_consents(consents, now, app.applicant_inn)
     consents_ok = all(t in active for t in CONSENT_TEXTS)
     cs, step, key = client_status_of(ctx)
     gctx = guard_context(session, app, actor, now=now)

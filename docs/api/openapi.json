@@ -975,7 +975,7 @@
           "client applications"
         ],
         "summary": "Upload Document",
-        "description": "UPLOAD_DOCUMENT: PDF, JPG or PNG (checked by file signature), up to 10 MB, up to 20 files.",
+        "description": "UPLOAD_DOCUMENT: PDF, JPG or PNG by signature, up to 10 MB; 20 draft files and a separate quota of 20 per information-request item.",
         "operationId": "upload_document_api_v1_applications__application_id__documents_post",
         "parameters": [
           {
@@ -2447,8 +2447,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Inclusive timestamp with timezone; calendar dates are converted by the UI from Europe/Moscow",
               "title": "Created From"
-            }
+            },
+            "description": "Inclusive timestamp with timezone; calendar dates are converted by the UI from Europe/Moscow"
           },
           {
             "name": "created_to",
@@ -2464,8 +2466,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Exclusive timestamp with timezone; the UI sends the start of the following day for an inclusive end date",
               "title": "Created To"
-            }
+            },
+            "description": "Exclusive timestamp with timezone; the UI sends the start of the following day for an inclusive end date"
           },
           {
             "name": "include_history",
@@ -3951,8 +3955,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Inclusive timestamp with timezone",
               "title": "From"
-            }
+            },
+            "description": "Inclusive timestamp with timezone"
           },
           {
             "name": "to",
@@ -3968,8 +3974,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Exclusive timestamp with timezone",
               "title": "To"
-            }
+            },
+            "description": "Exclusive timestamp with timezone"
           },
           {
             "name": "product_code",
@@ -4170,8 +4178,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Inclusive timestamp with timezone; UI calendar dates use Europe/Moscow",
               "title": "From"
-            }
+            },
+            "description": "Inclusive timestamp with timezone; UI calendar dates use Europe/Moscow"
           },
           {
             "name": "to",
@@ -4187,8 +4197,10 @@
                   "type": "null"
                 }
               ],
+              "description": "Exclusive timestamp with timezone; for an inclusive UI date use the start of the following day",
               "title": "To"
-            }
+            },
+            "description": "Exclusive timestamp with timezone; for an inclusive UI date use the start of the following day"
           },
           {
             "name": "page",

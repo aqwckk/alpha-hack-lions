@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import JSONResponse, Response
+from pydantic import AwareDatetime
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
@@ -76,8 +76,8 @@ def list_applications(
     mode: Literal["AUTO", "MANUAL"] | None = None,
     number: str | None = Query(default=None, max_length=16),
     inn: str | None = Query(default=None, max_length=12),
-    created_from: datetime | None = None,
-    created_to: datetime | None = None,
+    created_from: AwareDatetime | None = Query(None, description="Inclusive timestamp with timezone; calendar dates are converted by the UI from Europe/Moscow"),
+    created_to: AwareDatetime | None = Query(None, description="Exclusive timestamp with timezone; the UI sends the start of the following day for an inclusive end date"),
     include_history: bool = True,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),

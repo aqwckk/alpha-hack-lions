@@ -43,9 +43,19 @@ def _amount(value: Any, field: str = "amount") -> Decimal:
         d = Decimal(str(value))
     except (InvalidOperation, ValueError) as exc:
         raise ValidationFailed(fields=[{"field": field, "code": "INVALID_FORMAT", "message": "Укажите сумму в рублях"}]) from exc
-    if not d.is_finite() or d <= 0 or d > Decimal("10000000000"):
-        raise ValidationFailed(fields=[{"field": field, "code": "INVALID_FORMAT", "message": "Укажите сумму в рублях"}])
+    if not d.is_finite() or d <= 0 or d > Decimal("10000000000") or d != d.to_integral_value():
+        raise ValidationFailed(fields=[{"field": field, "code": "INVALID_FORMAT", "message": "Укажите положительную сумму в целых рублях"}])
     return money(d)
+
+
+def _rate(value: str) -> Decimal:
+    try:
+        rate = Decimal(value)
+        if not rate.is_finite() or not Decimal("0") <= rate <= Decimal("100") or rate != money(rate):
+            raise ValueError
+        return money(rate)
+    except (ArithmeticError, ValueError, TypeError) as exc:
+        raise ValidationFailed(fields=[{"field": "rate_percent", "code": "OUT_OF_RANGE", "message": "Ставка от 0 до 100% годовых, не больше двух знаков после запятой"}]) from exc
 
 
 @router.get("/catalog/products")
@@ -126,7 +136,12 @@ def calculate(body: CalculateRequest, actor: Actor = Depends(current_actor)) -> 
     if body.product_code not in pol["products"]:
         raise ValidationFailed(fields=[{"field": "product_code", "code": "INVALID_FORMAT", "message": "Неизвестный продукт"}])
     amount = _amount(body.amount)
-    rate = money(body.rate_percent) if body.rate_percent else money(pol["products"][body.product_code]["base_rate_percent"])
+    product = pol["products"][body.product_code]
+    if not Decimal(product["amount_min"]) <= amount <= Decimal(product["amount_max"]) or amount % Decimal(product["amount_step"]) != 0:
+        raise ValidationFailed(fields=[{"field": "amount", "code": "OUT_OF_RANGE", "message": "Сумма должна соответствовать границам и шагу продукта"}])
+    if not product["term_min_months"] <= body.term_months <= product["term_max_months"]:
+        raise ValidationFailed(fields=[{"field": "term_months", "code": "OUT_OF_RANGE", "message": "Срок должен соответствовать границам продукта"}])
+    rate = _rate(body.rate_percent) if body.rate_percent is not None else money(pol["products"][body.product_code]["base_rate_percent"])
     first = add_months(today_msk(), 1)
     t = totals(amount, rate, body.term_months)
     return {

@@ -414,6 +414,19 @@ class InfoRequestItem(Base):
     document_ids: Mapped[list[Any] | None] = mapped_column(JSONB)
 
 
+class IntegrationRequest(Base):
+    """Durable operation intent, committed before contacting the external system."""
+
+    __tablename__ = "integration_requests"
+
+    idempotency_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("applications.id"), nullable=False, index=True)
+    system: Mapped[str] = mapped_column(String(16), nullable=False)
+    request: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    response: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = created_at()
+
+
 class DocumentPackage(Base):
     __tablename__ = "document_packages"
 
@@ -486,6 +499,7 @@ class Loan(Base):
     issued_at: Mapped[datetime] = mapped_column(TS, nullable=False)
     first_payment_date: Mapped[date] = mapped_column(Date, nullable=False)
     abs_operation_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    payment_schedule: Mapped[list[Any] | None] = mapped_column(JSONB)
 
 
 class Comment(Base):

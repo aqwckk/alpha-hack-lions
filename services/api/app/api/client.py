@@ -48,6 +48,7 @@ from ..services import client_commands as cmd
 from ..services.access import client_scope, load_for_client
 from ..services.core import Actor
 from ..services.views import client_application_view, client_list_item
+from ..services.schedules import package_schedule
 from .deps import client_actor
 
 router = APIRouter(prefix="/api/v1/applications", tags=["client applications"])
@@ -68,7 +69,7 @@ def respond(status: int, body: dict[str, Any], replayed: bool) -> JSONResponse:
 def list_applications(page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100), actor: Actor = Depends(client_actor), session: Session = Depends(get_db)) -> dict[str, Any]:
     scope = client_scope(actor)
     total = session.execute(select(func.count()).select_from(Application).where(scope)).scalar_one()
-    apps = session.execute(select(Application).where(scope).order_by(Application.updated_at.desc()).offset((page - 1) * page_size).limit(page_size)).scalars()
+    apps = session.execute(select(Application).where(scope).order_by(Application.updated_at.desc(), Application.id.desc()).offset((page - 1) * page_size).limit(page_size)).scalars()
     return {"items": [ClientApplicationListItem.model_validate(client_list_item(session, a)).model_dump() for a in apps], "page": page, "page_size": page_size, "total": total}
 
 
@@ -143,7 +144,7 @@ async def upload_document(
     actor: Actor = Depends(client_actor),
     session: Session = Depends(get_db),
 ):
-    """UPLOAD_DOCUMENT: PDF, JPG or PNG (checked by file signature), up to 10 MB, up to 20 files."""
+    """UPLOAD_DOCUMENT: PDF, JPG or PNG by signature, up to 10 MB; 20 draft files and a separate quota of 20 per information-request item."""
     limit = get_settings().max_document_bytes
     content = await file.read(limit + 1)
     if len(content) > limit:
@@ -265,11 +266,23 @@ def schedule(application_id: uuid.UUID, option_id: uuid.UUID | None = Query(defa
     loan = session.execute(select(Loan).where(Loan.application_id == app.id)).scalar_one_or_none()
     first = loan.first_payment_date if loan and loan.product_code == option.product_code else add_months(today_msk(), 1)
     term = option.tranche_max_term_months or option.term_months
+    rows = None
+    if app.final_option_id == option.id:
+        if loan is not None and loan.payment_schedule:
+            rows = loan.payment_schedule
+        else:
+            package = session.execute(select(DocumentPackage).where(DocumentPackage.application_id == app.id, DocumentPackage.offer_option_id == option.id).order_by(DocumentPackage.created_at.desc()).limit(1)).scalar_one_or_none()
+            if package is not None:
+                rows = package_schedule(session, package)
+        if rows:
+            from datetime import date
+
+            first = date.fromisoformat(rows[0]["date"])
     t = totals(option.amount, option.rate_percent, term)
     return {
         "product_code": option.product_code, "amount": str(option.amount), "term_months": term, "rate_percent": str(option.rate_percent),
         "monthly_payment": str(t["monthly_payment"]), "total_payment": str(t["total_payment"]), "overpayment": str(t["overpayment"]),
-        "first_payment_date": first.isoformat(), "rows": payment_schedule(option.amount, option.rate_percent, term, first),
+        "first_payment_date": first.isoformat(), "rows": rows if rows is not None else payment_schedule(option.amount, option.rate_percent, term, first),
     }
 
 

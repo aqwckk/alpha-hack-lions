@@ -166,6 +166,7 @@ def update_draft(session: Session, actor: Actor, app: Application, *, expected_v
         raise ValidationFailed(fields=[{"field": f, "code": "NOT_EDITABLE", "message": "Поле нельзя изменить"} for f in unknown])
     changes: dict[str, Any] = {}
     errors = []
+    revoked_consents = []
     for field, raw in fields.items():
         value, err = normalize(field, raw)
         if err:
@@ -180,8 +181,15 @@ def update_draft(session: Session, actor: Actor, app: Application, *, expected_v
         else:
             changes.update(company_id=None, applicant_type=None)
         changes.update(inn_check_status="NOT_CHECKED", registry_data=None, company_short_name=None, prefilled_at=None, early_warnings=None)
+        for consent in consent_rows(session, app):
+            if consent.revoked_at is None:
+                consent.revoked_at = utcnow()
+                revoked_consents.append(consent)
     if changes:
         bump_version(session, app, actor, expected_version=expected_version, changes=changes, allowed_statuses=(Status.DRAFT,))
+    for consent in revoked_consents:
+        emit(session, "CONSENT_REVOKED", actor, application=app, payload={"consent_type": consent.consent_type, "text_version": consent.text_version, "reason": "APPLICANT_CHANGED"})
+        audit(session, actor, Command.REVOKE_CONSENT.value, application_id=app.id, object_type="consent", object_id=str(consent.id), details={"reason": "APPLICANT_CHANGED"})
     return app, errors
 
 
@@ -292,8 +300,10 @@ def give_consent(session: Session, actor: Actor, app: Application, consent_type:
         raise NotFound("Неизвестный тип согласия", code="UNKNOWN_CONSENT")
     if app.status != Status.DRAFT:
         raise invalid_transition(app.status, None, internal=False)
+    if not app.applicant_inn or inn_error(app.applicant_inn):
+        raise ValidationFailed(fields=[field_error("applicant_inn", "REQUIRED")])
     now = utcnow()
-    existing = active_consents(consent_rows(session, app), now).get(consent_type)
+    existing = active_consents(consent_rows(session, app), now, app.applicant_inn).get(consent_type)
     if existing is not None:
         return existing
     spec = CONSENT_TEXTS[consent_type]
@@ -316,7 +326,7 @@ def revoke_consent(session: Session, actor: Actor, app: Application, consent_typ
     if app.status != Status.DRAFT:
         raise Conflict("После отправки отозвать согласие можно только отменой заявки", code="INVALID_TRANSITION")
     now = utcnow()
-    existing = active_consents(consent_rows(session, app), now).get(consent_type)
+    existing = active_consents(consent_rows(session, app), now, app.applicant_inn).get(consent_type)
     if existing is None:
         return
     existing.revoked_at = now
@@ -356,9 +366,13 @@ def upload_document(session: Session, actor: Actor, app: Application, *, documen
     mime = _sniff(content)
     if mime is None:
         raise ValidationFailed(fields=[field_error("file", "DOCUMENT_TYPE_NOT_ALLOWED")], code="DOCUMENT_TYPE_NOT_ALLOWED")
-    count = session.execute(select(func.count()).select_from(Document).where(Document.application_id == app.id, Document.deleted_at.is_(None))).scalar_one()
+    quota = select(func.count()).select_from(Document).where(Document.application_id == app.id, Document.deleted_at.is_(None))
+    if app.status == Status.INFO_REQUESTED:
+        quota = quota.where(Document.info_request_item_id == info_request_item_id)
+    count = session.execute(quota).scalar_one()
     if count >= s.max_documents_per_application:
-        raise ValidationFailed("Можно загрузить не больше 20 файлов на заявку", code="TOO_MANY_DOCUMENTS")
+        scope = "пункт запроса банка" if app.status == Status.INFO_REQUESTED else "заявку"
+        raise ValidationFailed(f"Можно загрузить не больше {s.max_documents_per_application} файлов на {scope}", code="TOO_MANY_DOCUMENTS")
     safe_name = "".join(ch for ch in (file_name or "document") if ch.isprintable() and ch not in '/\\:*?"<>|')[:200] or "document"
     key = uuid.uuid4().hex
     session.add(DocumentContent(storage_key=key, content=content))
@@ -414,7 +428,7 @@ def submit(session: Session, actor: Actor, app: Application, *, expected_version
         prefill(session, actor, app, expected_version=app.version, inn=None)
     if app.inn_check_status == "NOT_FOUND":
         errors.append(field_error("applicant_inn", "INN_NOT_FOUND"))
-    active = active_consents(consent_rows(session, app), utcnow())
+    active = active_consents(consent_rows(session, app), utcnow(), app.applicant_inn)
     for consent_type in CONSENT_TEXTS:
         if consent_type not in active:
             errors.append({"field": f"consents.{consent_type}", "code": "CONSENT_REQUIRED", "message": field_error("x", "CONSENT_REQUIRED")["message"]})

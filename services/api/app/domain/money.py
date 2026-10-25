@@ -74,7 +74,7 @@ def max_amount_for_payment(allowed_payment, rate_percent, term_months: int, amou
 
 def totals(amount, rate_percent, term_months: int) -> dict[str, Decimal]:
     payment = annuity_payment(amount, rate_percent, term_months)
-    total = money(payment * term_months)
+    total = money(amount) if dec(rate_percent) == 0 else money(payment * term_months)
     return {"monthly_payment": payment, "total_payment": total, "overpayment": money(total - dec(amount))}
 
 

@@ -9,7 +9,6 @@ limit, idempotent by key). Every response carries a request id; errors use one J
 from __future__ import annotations
 
 import asyncio
-import calendar
 import hashlib
 import hmac
 import json
@@ -17,14 +16,14 @@ import logging
 import sys
 import time
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field
 
 from .data import SOURCES, ProfileStore, inn_is_valid
 from .documents import render_package
@@ -61,8 +60,10 @@ def _configure_logging(level: str) -> logging.Logger:
 
 class ConsentRef(BaseModel):
     consent_id: str = Field(min_length=1, max_length=64)
-    granted_at: datetime
-    expires_at: datetime
+    subject_inn: str = Field(min_length=10, max_length=12)
+    granted_at: AwareDatetime
+    expires_at: AwareDatetime
+    revoked_at: AwareDatetime | None = None
     text_version: str = Field(min_length=1, max_length=64)
 
 
@@ -117,6 +118,9 @@ class LoanRequest(BaseModel):
     term_months: int = Field(ge=1, le=120)
     rate_percent: str
     monthly_payment: str
+    contract_number: str = Field(min_length=1, max_length=64)
+    first_payment_date: date
+    schedule: list[dict[str, Any]] = Field(min_length=1)
 
 
 class OutageRequest(BaseModel):
@@ -129,11 +133,6 @@ class BehaviorRequest(BaseModel):
     inn: str
     fail_first_n: int = Field(ge=0, le=100)
     failure: Literal["TIMEOUT", "HTTP_500"] = "HTTP_500"
-
-
-def add_month(d: date) -> date:
-    y, m = (d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1)
-    return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
 
 
 class MockError(Exception):
@@ -279,7 +278,8 @@ def create_app() -> FastAPI:
     async def credit_report(body: CreditReportRequest, request: Request):
         """Credit report. The bureau refuses a request without a valid consent reference (403 CONSENT_REQUIRED)."""
         now = datetime.now(timezone.utc)
-        if body.consent is None or body.consent.expires_at <= now or body.consent.granted_at > now + timedelta(minutes=5):
+        if (body.consent is None or body.consent.subject_inn != body.inn or body.consent.revoked_at is not None
+                or body.consent.expires_at <= now or body.consent.granted_at > now):
             raise MockError(403, "CONSENT_REQUIRED", "A valid consent of the subject is required")
         return await source_response(request, "CREDIT_BUREAU", body.inn)
 
@@ -289,6 +289,15 @@ def create_app() -> FastAPI:
         if not value or len(value) > 128:
             raise MockError(400, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key header is required")
         return value
+
+    @app.get("/edo/v1/packages/by-key", tags=["EDO"], dependencies=deps)
+    def package_by_key(idempotency_key: str | None = Header(default=None)):
+        key = idem_key(idempotency_key)
+        with ledger.lock:
+            entry = ledger.package_keys.get(key)
+            if entry is None:
+                raise MockError(404, "PACKAGE_NOT_FOUND", "Unknown package key")
+            return ledger.packages[entry[0]]
 
     @app.post("/edo/v1/packages", tags=["EDO"], dependencies=deps, status_code=201)
     async def create_package(body: PackageRequest, request: Request, idempotency_key: str | None = Header(default=None)):
@@ -314,6 +323,7 @@ def create_app() -> FastAPI:
                 "documents": render_package(number, payload),
             }
             ledger.packages[pkg_id] = package
+            ledger.package_requests[pkg_id] = payload
             ledger.package_keys[key] = (pkg_id, fingerprint)
             return package
 
@@ -358,20 +368,26 @@ def create_app() -> FastAPI:
                 if fp != fingerprint:
                     raise MockError(409, "IDEMPOTENCY_CONFLICT", "The key was used with another request")
                 return JSONResponse(status_code=200, content=op, headers={"Idempotent-Replayed": "true"})
-            ledger.contract_seq += 1
+            package_id = next((pid for pid, pkg in ledger.packages.items() if pkg["contract_number"] == body.contract_number), None)
+            signed = ledger.package_requests.get(package_id)
+            if signed is None or ledger.packages[package_id]["status"] != "SIGNED":
+                raise MockError(409, "SIGNED_PACKAGE_REQUIRED", "A signed document package is required")
+            if (signed["application_id"] != body.application_id or signed["applicant"]["inn"] != body.borrower_inn
+                    or signed["schedule"] != body.schedule or body.schedule[0]["date"] != body.first_payment_date.isoformat()
+                    or any(signed["terms"][field] != payload[field] for field in ("product_code", "amount", "term_months", "rate_percent", "monthly_payment"))):
+                raise MockError(409, "SIGNED_TERMS_MISMATCH", "Loan terms must match the signed package")
             issued = datetime.now(timezone.utc)
-            local_day = issued.astimezone(MSK).date()
-            first_payment = add_month(local_day)
             prefix = "40702810" if len(body.borrower_inn) == 10 else "40802810"
             tail = int(hashlib.sha256(f"acc:{body.borrower_inn}".encode()).hexdigest()[:8], 16) % 10000
             op = {
                 "operation_id": f"ABS-{uuid.uuid4().hex[:12].upper()}",
                 "operation_type": body.operation_type,
                 "status": "COMPLETED",
-                "contract_number": f"KD-{local_day.year}-{ledger.contract_seq:06d}",
+                "contract_number": body.contract_number,
                 "account_number_masked": f"{prefix}{'*' * 8}{tail:04d}",
                 "issued_at": issued.isoformat(timespec="seconds").replace("+00:00", "Z"),
-                "first_payment_date": first_payment.isoformat(),
+                "first_payment_date": body.first_payment_date.isoformat(),
+                "schedule": body.schedule,
                 "amount": body.amount,
             }
             ledger.operations[key] = (fingerprint, op)
