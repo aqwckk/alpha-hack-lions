@@ -124,7 +124,7 @@ services:
     command: ["python", "-m", "app.cli", "worker"]
     environment: *api-env
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9100/metrics', timeout=2)"]
+      test: ["CMD", "python", "-m", "app.healthcheck", "worker"]
       interval: 10s
       timeout: 3s
       retries: 5

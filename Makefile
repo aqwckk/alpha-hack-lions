@@ -5,7 +5,7 @@ PYTHON ?= python3
 .PHONY: up down test e2e openapi logs reset ps web-install web-dev web-test web-types
 
 up:            ## build and start the whole stack (web on http://localhost:8080, api on http://localhost:8000/api, Swagger /api/docs)
-	$(COMPOSE) up --build -d
+	$(COMPOSE) up --build -d --wait
 	$(COMPOSE) ps
 
 down:          ## stop containers, keep the database volume
@@ -41,4 +41,4 @@ ps:
 
 reset:         ## DESTRUCTIVE: remove containers and the database volume, then start from scratch
 	$(COMPOSE) down -v --remove-orphans
-	$(COMPOSE) up --build -d
+	$(COMPOSE) up --build -d --wait
